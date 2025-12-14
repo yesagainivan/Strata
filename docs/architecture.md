@@ -71,6 +71,52 @@ const foldState = StateField.define<Map<number, boolean>>({
 });
 ```
 
+### Block Widgets (Tables)
+
+**Critical insight:** Block widgets (`block: true`) cannot be provided via `ViewPlugin`. You MUST use `StateField` with the `provide` option:
+
+```typescript
+const tableField = StateField.define<DecorationSet>({
+    create(state) {
+        return buildDecorations(state);
+    },
+    update(decorations, tr) {
+        if (tr.docChanged || tr.selection) {
+            return buildDecorations(tr.state);
+        }
+        return decorations;
+    },
+    // This is required for block widgets!
+    provide: field => EditorView.decorations.from(field),
+});
+```
+
+**Multi-line content strategy:**
+1. Place a block widget BEFORE the content (`side: -1`)
+2. Use `Decoration.line()` to hide each line via CSS
+3. CSS must use `height: 0`, `visibility: hidden` (not just `color: transparent`)
+
+```typescript
+// Widget before first line
+Decoration.widget({
+    widget: new TableWidget(table),
+    block: true,
+    side: -1, // Before content
+});
+
+// Hide underlying lines
+Decoration.line({ class: 'cm-hidden-line' });
+```
+
+**CSS for hidden lines:**
+```css
+.cm-hidden-line {
+    height: 0 !important;
+    visibility: hidden !important;
+    overflow: hidden !important;
+}
+```
+
 ## Performance Optimizations
 
 ### 1. Line-Change Detection
@@ -163,4 +209,6 @@ useEffect(() => {
 | `extensions/wikilink.ts` | `[[link]]` support |
 | `extensions/callout.ts` | `> [!type]` with folding |
 | `extensions/tag.ts` | `#hashtag` support |
+| `extensions/table.ts` | Markdown table rendering (StateField) |
+| `extensions/math.ts` | LaTeX math with KaTeX |
 | `api/extension.ts` | User extension API |

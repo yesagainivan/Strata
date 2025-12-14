@@ -3,7 +3,7 @@
  */
 
 import { useState, useRef } from 'react';
-import { MarkdownEditor, createExtension, mathExtension, EditorErrorBoundary } from './index';
+import { MarkdownEditor, createExtension, mathExtension, tableExtension, EditorErrorBoundary } from './index';
 import type { MarkdownEditorHandle, WikilinkData } from './types';
 import 'katex/dist/katex.min.css';
 import './App.css';
@@ -48,6 +48,14 @@ Organize your notes with #tags and #nested/tags. Click them to filter!
 Inline math: $E = mc^2$ and $\\frac{a}{b}$
 
 Block math (single line): $$\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}$$
+
+### Tables
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| WYSIWYG | ✅ Done | Hides syntax when not editing |
+| Tables | ✅ Done | Header styling, separators |
+| Math | ✅ Done | KaTeX rendering |
 
 ### Task Lists
 - [ ] Uncompleted task
@@ -113,6 +121,7 @@ function App() {
           <button onClick={() => insertText('#tag')}>Tag</button>
           <button onClick={() => insertText('> [!info] Title\n> Content')}>Callout</button>
           <button onClick={() => insertText('$x^2$')}>Math</button>
+          <button onClick={() => insertText('| A | B |\n|---|---|\n| 1 | 2 |')}>Table</button>
         </div>
         <div className="toolbar-group">
           <button onClick={toggleTheme}>
@@ -131,7 +140,7 @@ function App() {
             placeholder="Start writing your note..."
             onWikilinkClick={handleWikilinkClick}
             onTagClick={handleTagClick}
-            extensions={[mentionExtension, mathExtension()]}
+            extensions={[mentionExtension, mathExtension(), tableExtension()]}
             className="editor-instance"
           />
         </EditorErrorBoundary>

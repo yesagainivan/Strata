@@ -8,6 +8,8 @@ A production-ready **CodeMirror 6** based markdown editor with Obsidian-style WY
 - 🔗 **Wikilinks** - `[[note]]`, `[[note|alias]]`, `[[note#heading]]`
 - 📌 **Callouts** - `> [!info]`, `> [!warning]`, etc. with foldable support
 - 🏷️ **Tags** - `#tag` and `#nested/tag` with click handlers
+- 📐 **Tables** - GFM tables with header/row styling
+- 🧮 **Math** - LaTeX rendering with KaTeX
 - 🌗 **Theming** - Light/dark mode with CSS variables
 - 🔌 **Extensible** - Simple API for custom syntax extensions
 - 🛡️ **Error Boundary** - Graceful error handling for production
