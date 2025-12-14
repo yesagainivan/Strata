@@ -245,7 +245,6 @@ const baseTheme = EditorView.baseTheme({
     },
     '.cm-callout-title': {
         fontWeight: '600',
-        marginBottom: '4px',
     },
 
     // Hidden marks (will be shown on cursor hover)
