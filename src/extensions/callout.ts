@@ -189,135 +189,141 @@ function buildDecorations(view: EditorView): DecorationSet {
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
     const foldStates = view.state.field(foldState);
 
-    for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
-        const line = doc.line(lineNum);
-        const match = line.text.match(CALLOUT_HEADER_REGEX);
+    // Scan only visible ranges for performance on large documents
+    for (const { from, to } of view.visibleRanges) {
+        const startLine = doc.lineAt(from).number;
+        const endLineNum = doc.lineAt(to).number;
 
-        if (match) {
-            const syntaxPart = match[1];
-            const type = match[2].toLowerCase();
-            const foldIndicator = match[3]; // '+' or '-' or undefined
-            const title = match[4]?.trim() || '';
-            const styleType = getCalloutStyleType(type);
-            const typeInfo = CALLOUT_TYPES[type] || { icon: ICONS.info, defaultTitle: type };
-            const displayTitle = title || typeInfo.defaultTitle;
+        for (let lineNum = startLine; lineNum <= endLineNum; lineNum++) {
+            const line = doc.line(lineNum);
+            const match = line.text.match(CALLOUT_HEADER_REGEX);
 
-            // Determine if this callout is foldable (has + or - indicator)
-            const isFoldable = foldIndicator === '+' || foldIndicator === '-';
+            if (match) {
+                const syntaxPart = match[1];
+                const type = match[2].toLowerCase();
+                const foldIndicator = match[3]; // '+' or '-' or undefined
+                const title = match[4]?.trim() || '';
+                const styleType = getCalloutStyleType(type);
+                const typeInfo = CALLOUT_TYPES[type] || { icon: ICONS.info, defaultTitle: type };
+                const displayTitle = title || typeInfo.defaultTitle;
 
-            // Get fold state: check user state first, then fall back to indicator default
-            // '-' means collapsed by default, '+' means expanded by default
-            let isFolded = false;
-            if (isFoldable) {
-                if (foldStates.has(lineNum)) {
-                    isFolded = foldStates.get(lineNum)!;
-                } else {
-                    // Default based on indicator: '-' = folded, '+' = expanded
-                    isFolded = foldIndicator === '-';
+                // Determine if this callout is foldable (has + or - indicator)
+                const isFoldable = foldIndicator === '+' || foldIndicator === '-';
+
+                // Get fold state: check user state first, then fall back to indicator default
+                // '-' means collapsed by default, '+' means expanded by default
+                let isFolded = false;
+                if (isFoldable) {
+                    if (foldStates.has(lineNum)) {
+                        isFolded = foldStates.get(lineNum)!;
+                    } else {
+                        // Default based on indicator: '-' = folded, '+' = expanded
+                        isFolded = foldIndicator === '-';
+                    }
                 }
-            }
 
-            let endLine = lineNum;
-            for (let nextLine = lineNum + 1; nextLine <= doc.lines; nextLine++) {
-                if (doc.line(nextLine).text.startsWith('>')) {
-                    endLine = nextLine;
-                } else {
-                    break;
+                let endLine = lineNum;
+                for (let nextLine = lineNum + 1; nextLine <= doc.lines; nextLine++) {
+                    if (doc.line(nextLine).text.startsWith('>')) {
+                        endLine = nextLine;
+                    } else {
+                        break;
+                    }
                 }
-            }
 
-            const isOnCallout = cursorLine >= lineNum && cursorLine <= endLine;
-            const hasContentLines = endLine > lineNum;
+                const isOnCallout = cursorLine >= lineNum && cursorLine <= endLine;
+                const hasContentLines = endLine > lineNum;
 
-            // Apply line decorations to header line
-            decos.push({
-                from: line.from,
-                to: line.from,
-                deco: Decoration.line({ class: `cm-callout-line cm-callout-${styleType}` }),
-                sortKey: 0,
-            });
-
-            // Apply line decorations to content lines (if not folded or editing)
-            for (let i = lineNum + 1; i <= endLine; i++) {
-                const calloutLine = doc.line(i);
-
-                if (isFolded && !isOnCallout) {
-                    // Hide content lines when folded
-                    decos.push({
-                        from: calloutLine.from,
-                        to: calloutLine.from,
-                        deco: hiddenLine,
-                        sortKey: 0,
-                    });
-                } else {
-                    // Show with styling
-                    decos.push({
-                        from: calloutLine.from,
-                        to: calloutLine.from,
-                        deco: Decoration.line({ class: `cm-callout-line cm-callout-${styleType}` }),
-                        sortKey: 0,
-                    });
-                }
-            }
-
-            // If NOT editing the callout, hide syntax and show widget
-            if (!isOnCallout) {
-                // Add icon/title widget at start (with fold toggle if foldable and has content)
-                const showFoldable = isFoldable && hasContentLines;
+                // Apply line decorations to header line
                 decos.push({
                     from: line.from,
                     to: line.from,
-                    deco: Decoration.widget({
-                        widget: new CalloutIconWidget(
-                            typeInfo.icon,
-                            displayTitle,
-                            styleType,
-                            showFoldable,
-                            isFolded,
-                            lineNum
-                        ),
-                        side: -1,
-                    }),
-                    sortKey: 1,
+                    deco: Decoration.line({ class: `cm-callout-line cm-callout-${styleType}` }),
+                    sortKey: 0,
                 });
 
-                // Hide the syntax part
-                decos.push({
-                    from: line.from,
-                    to: line.from + syntaxPart.length,
-                    deco: hiddenSyntax,
-                    sortKey: 2,
-                });
+                // Apply line decorations to content lines (if not folded or editing)
+                for (let i = lineNum + 1; i <= endLine; i++) {
+                    const calloutLine = doc.line(i);
 
-                // If there's a title, hide it too
-                if (title) {
-                    const titleStart = line.from + syntaxPart.length;
-                    decos.push({
-                        from: titleStart,
-                        to: line.to,
-                        deco: hiddenSyntax,
-                        sortKey: 3,
-                    });
+                    if (isFolded && !isOnCallout) {
+                        // Hide content lines when folded
+                        decos.push({
+                            from: calloutLine.from,
+                            to: calloutLine.from,
+                            deco: hiddenLine,
+                            sortKey: 0,
+                        });
+                    } else {
+                        // Show with styling
+                        decos.push({
+                            from: calloutLine.from,
+                            to: calloutLine.from,
+                            deco: Decoration.line({ class: `cm-callout-line cm-callout-${styleType}` }),
+                            sortKey: 0,
+                        });
+                    }
                 }
 
-                // Hide "> " prefix on content lines (only if not folded)
-                if (!isFolded) {
-                    for (let i = lineNum + 1; i <= endLine; i++) {
-                        const contentLine = doc.line(i);
-                        const prefixMatch = contentLine.text.match(/^>\s?/);
-                        if (prefixMatch) {
-                            decos.push({
-                                from: contentLine.from,
-                                to: contentLine.from + prefixMatch[0].length,
-                                deco: hiddenPrefix,
-                                sortKey: 2,
-                            });
+                // If NOT editing the callout, hide syntax and show widget
+                if (!isOnCallout) {
+                    // Add icon/title widget at start (with fold toggle if foldable and has content)
+                    const showFoldable = isFoldable && hasContentLines;
+                    decos.push({
+                        from: line.from,
+                        to: line.from,
+                        deco: Decoration.widget({
+                            widget: new CalloutIconWidget(
+                                typeInfo.icon,
+                                displayTitle,
+                                styleType,
+                                showFoldable,
+                                isFolded,
+                                lineNum
+                            ),
+                            side: -1,
+                        }),
+                        sortKey: 1,
+                    });
+
+                    // Hide the syntax part
+                    decos.push({
+                        from: line.from,
+                        to: line.from + syntaxPart.length,
+                        deco: hiddenSyntax,
+                        sortKey: 2,
+                    });
+
+                    // If there's a title, hide it too
+                    if (title) {
+                        const titleStart = line.from + syntaxPart.length;
+                        decos.push({
+                            from: titleStart,
+                            to: line.to,
+                            deco: hiddenSyntax,
+                            sortKey: 3,
+                        });
+                    }
+
+                    // Hide "> " prefix on content lines (only if not folded)
+                    if (!isFolded) {
+                        for (let i = lineNum + 1; i <= endLine; i++) {
+                            const contentLine = doc.line(i);
+                            const prefixMatch = contentLine.text.match(/^>\s?/);
+                            if (prefixMatch) {
+                                decos.push({
+                                    from: contentLine.from,
+                                    to: contentLine.from + prefixMatch[0].length,
+                                    deco: hiddenPrefix,
+                                    sortKey: 2,
+                                });
+                            }
                         }
                     }
                 }
-            }
 
-            lineNum = endLine;
+                lineNum = endLine;
+            }
         }
     }
 
@@ -334,18 +340,29 @@ function buildDecorations(view: EditorView): DecorationSet {
 const calloutPlugin = ViewPlugin.fromClass(
     class {
         decorations: DecorationSet;
+        lastCursorLine: number;
 
         constructor(view: EditorView) {
             this.decorations = buildDecorations(view);
+            this.lastCursorLine = view.state.doc.lineAt(view.state.selection.main.head).number;
         }
 
         update(update: ViewUpdate) {
-            // Rebuild on doc changes, viewport changes, selection changes, or fold state changes
+            // Always rebuild on doc changes, viewport changes, or fold state changes
             const hasFoldEffect = update.transactions.some(tr =>
                 tr.effects.some(e => e.is(toggleFoldEffect))
             );
-            if (update.docChanged || update.viewportChanged || update.selectionSet || hasFoldEffect) {
+
+            if (update.docChanged || update.viewportChanged || hasFoldEffect) {
                 this.decorations = buildDecorations(update.view);
+                this.lastCursorLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
+            } else if (update.selectionSet) {
+                // Only rebuild if cursor moved to a different line
+                const newLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
+                if (newLine !== this.lastCursorLine) {
+                    this.decorations = buildDecorations(update.view);
+                    this.lastCursorLine = newLine;
+                }
             }
         }
     },
