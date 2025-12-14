@@ -13,6 +13,7 @@ import { wysiwygExtension } from '../extensions/wysiwyg';
 import { wikilinkExtension } from '../extensions/wikilink';
 import { calloutExtension } from '../extensions/callout';
 import { tagExtension } from '../extensions/tag';
+import { imageEmbedExtension } from '../extensions/imageEmbed';
 import { createEditorTheme } from './theme';
 
 /**
@@ -76,6 +77,7 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
         wikilinkExtension({ onClick: onWikilinkClick }),
         calloutExtension(),  // Note: Currently minimal (theme-only) due to cursor bug in ViewPlugin
         tagExtension({ onClick: onTagClick }),
+        imageEmbedExtension(),
 
         // Theming (in compartment for dynamic updates)
         themeCompartment.of(createEditorTheme(theme)),

@@ -25,7 +25,7 @@ export interface WikilinkConfig {
  * Regex to match wikilinks: [[target]] or [[target|alias]]
  * Also matches [[target#heading]] and [[target#^block]]
  */
-const WIKILINK_REGEX = /\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g;
+const WIKILINK_REGEX = /(?<!!)\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g;
 
 /**
  * Parse a wikilink match into its components

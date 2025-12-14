@@ -26,6 +26,10 @@ The editor hides markdown syntax when you're not editing that line:
 Link to other notes with [[Note Name]] or use an alias [[Note Name|Display Text]].
 You can also link to headings [[Note#Heading]] or blocks [[Note#^block-id]].
 
+### Images
+Embed images with \`![[image.png]]\` or \`![[image.png|alt text]]\`.
+![[https://picsum.photos/id/237/200/120|Puppy]]
+
 ### Tags
 Organize your notes with #tags and #nested/tags. Click them to filter!
 
