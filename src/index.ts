@@ -22,6 +22,7 @@ export {
     wikilinkExtension,
     calloutExtension,
     tagExtension,
+    mathExtension,
     CALLOUT_TYPES,
 } from './extensions';
 export type { WikilinkConfig, TagConfig } from './extensions';

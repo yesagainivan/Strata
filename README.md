@@ -143,6 +143,7 @@ src/
 | [Extensions](docs/extensions.md) | Creating custom syntax extensions |
 | [Architecture](docs/architecture.md) | How the editor works internally |
 | [Callouts](docs/callouts.md) | All callout types with examples |
+| [Math](docs/math.md) | LaTeX/KaTeX math rendering |
 
 ## License
 

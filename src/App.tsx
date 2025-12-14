@@ -3,8 +3,9 @@
  */
 
 import { useState, useRef } from 'react';
-import { MarkdownEditor, createExtension } from './index';
+import { MarkdownEditor, createExtension, mathExtension, EditorErrorBoundary } from './index';
 import type { MarkdownEditorHandle, WikilinkData } from './types';
+import 'katex/dist/katex.min.css';
 import './App.css';
 
 // Sample markdown content demonstrating all features
@@ -41,6 +42,12 @@ Organize your notes with #tags and #nested/tags. Click them to filter!
 
 > [!danger] Critical
 > Use this for critical warnings.
+
+### Math (LaTeX)
+
+Inline math: $E = mc^2$ and $\\frac{a}{b}$
+
+Block math (single line): $$\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}$$
 
 ### Task Lists
 - [ ] Uncompleted task
@@ -105,6 +112,7 @@ function App() {
           <button onClick={() => insertText('[[link]]')}>Wikilink</button>
           <button onClick={() => insertText('#tag')}>Tag</button>
           <button onClick={() => insertText('> [!info] Title\n> Content')}>Callout</button>
+          <button onClick={() => insertText('$x^2$')}>Math</button>
         </div>
         <div className="toolbar-group">
           <button onClick={toggleTheme}>
@@ -114,17 +122,19 @@ function App() {
       </header>
 
       <main className="editor-container">
-        <MarkdownEditor
-          ref={editorRef}
-          value={content}
-          onChange={setContent}
-          theme={theme}
-          placeholder="Start writing your note..."
-          onWikilinkClick={handleWikilinkClick}
-          onTagClick={handleTagClick}
-          extensions={[mentionExtension]}
-          className="editor-instance"
-        />
+        <EditorErrorBoundary>
+          <MarkdownEditor
+            ref={editorRef}
+            value={content}
+            onChange={setContent}
+            theme={theme}
+            placeholder="Start writing your note..."
+            onWikilinkClick={handleWikilinkClick}
+            onTagClick={handleTagClick}
+            extensions={[mentionExtension, mathExtension()]}
+            className="editor-instance"
+          />
+        </EditorErrorBoundary>
       </main>
 
       <footer className="status-bar">
