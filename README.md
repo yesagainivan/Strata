@@ -1,0 +1,107 @@
+# Modern Markdown Editor
+
+A production-ready **CodeMirror 6** based markdown editor with Obsidian-style WYSIWYG editing.
+
+## Features
+
+- 📝 **WYSIWYG Editing** - Markdown syntax hides when you're not editing that line (like Obsidian)
+- 🔗 **Wikilinks** - `[[note]]`, `[[note|alias]]`, `[[note#heading]]`
+- 📌 **Callouts** - `> [!info]`, `> [!warning]`, etc. with 20+ types
+- 🏷️ **Tags** - `#tag` and `#nested/tag` with click handlers
+- 🌗 **Theming** - Light/dark mode with CSS variables
+- 🔌 **Extensible** - Simple API for custom syntax extensions
+
+## Quick Start
+
+```bash
+npm install
+npm run dev
+```
+
+## Usage
+
+```tsx
+import { MarkdownEditor } from './index';
+
+function App() {
+  const [content, setContent] = useState('# Hello World');
+
+  return (
+    <MarkdownEditor
+      value={content}
+      onChange={setContent}
+      theme="light"
+      onWikilinkClick={(data) => console.log('Navigate to:', data.target)}
+      onTagClick={(tag) => console.log('Filter by:', tag)}
+    />
+  );
+}
+```
+
+## Creating Custom Extensions
+
+Add your own syntax support easily:
+
+```tsx
+import { createExtension, MarkdownEditor } from './index';
+
+// Create @mention extension
+const mentions = createExtension({
+  name: 'mention',
+  pattern: /@(\w+)/g,
+  className: 'cm-mention',
+  onClick: (match) => alert(`Clicked user: @${match[1]}`),
+});
+
+<MarkdownEditor extensions={[mentions]} />
+```
+
+## API Reference
+
+### MarkdownEditor Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `value` | `string` | Controlled markdown content |
+| `defaultValue` | `string` | Initial content (uncontrolled) |
+| `onChange` | `(value: string) => void` | Content change handler |
+| `theme` | `'light' \| 'dark'` | Theme mode |
+| `placeholder` | `string` | Placeholder text |
+| `readOnly` | `boolean` | Read-only mode |
+| `extensions` | `Extension[]` | Additional CM6 extensions |
+| `onWikilinkClick` | `(data: WikilinkData) => void` | Wikilink click handler |
+| `onTagClick` | `(tag: string) => void` | Tag click handler |
+
+### Ref Methods
+
+```tsx
+const editorRef = useRef<MarkdownEditorHandle>(null);
+
+editorRef.current?.getValue();     // Get content
+editorRef.current?.setValue(text); // Set content
+editorRef.current?.focus();        // Focus editor
+editorRef.current?.insertText(t);  // Insert at cursor
+```
+
+## Project Structure
+
+```
+src/
+├── components/
+│   └── MarkdownEditor.tsx    # Main React component
+├── core/
+│   ├── editor.ts             # CM6 factory
+│   └── theme.ts              # Theme system
+├── extensions/
+│   ├── wysiwyg/              # Hidden marks, headings
+│   ├── wikilink.ts           # [[links]]
+│   ├── callout.ts            # > [!type]
+│   └── tag.ts                # #tags
+├── api/
+│   └── extension.ts          # User extension API
+└── index.ts                  # Exports
+```
+
+## License
+
+MIT
