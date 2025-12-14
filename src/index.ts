@@ -5,6 +5,7 @@
 
 // Main component
 export { MarkdownEditor, default } from './components/MarkdownEditor';
+export { EditorErrorBoundary } from './components/EditorErrorBoundary';
 
 // Types
 export type {
