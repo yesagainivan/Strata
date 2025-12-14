@@ -2,11 +2,12 @@
  * Callout extension for Obsidian-style admonitions
  * 
  * Syntax: > [!type] Title
+ * Foldable: > [!type]+ Title (expanded) or > [!type]- Title (collapsed)
  * 
- * Final version with SVG icons
+ * Supports collapsible callouts with chevron toggle
  */
 
-import { Extension, RangeSetBuilder } from '@codemirror/state';
+import { Extension, RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 import {
     Decoration,
     DecorationSet,
@@ -15,6 +16,46 @@ import {
     ViewUpdate,
     WidgetType,
 } from '@codemirror/view';
+
+// Effect to toggle fold state for a callout at a specific line
+const toggleFoldEffect = StateEffect.define<{ line: number }>();
+
+// State field to track which callouts are folded (by their starting line number)
+// Map stores: lineNumber -> isFolded
+const foldState = StateField.define<Map<number, boolean>>({
+    create() {
+        return new Map();
+    },
+    update(value, tr) {
+        let newValue = value;
+
+        // Handle document changes - adjust line numbers
+        if (tr.docChanged) {
+            const newMap = new Map<number, boolean>();
+            for (const [line, folded] of value) {
+                // Try to map the old position to new position
+                const oldLine = tr.startState.doc.line(Math.min(line, tr.startState.doc.lines));
+                const newPos = tr.changes.mapPos(oldLine.from, 1);
+                if (newPos >= 0 && newPos <= tr.newDoc.length) {
+                    const newLine = tr.newDoc.lineAt(newPos).number;
+                    newMap.set(newLine, folded);
+                }
+            }
+            newValue = newMap;
+        }
+
+        // Handle toggle effects
+        for (const effect of tr.effects) {
+            if (effect.is(toggleFoldEffect)) {
+                newValue = new Map(newValue);
+                const current = newValue.get(effect.value.line) ?? false;
+                newValue.set(effect.value.line, !current);
+            }
+        }
+
+        return newValue;
+    },
+});
 
 // SVG icon strings - using standard Lucide/Feather paths with round caps
 const ICONS = {
@@ -59,11 +100,24 @@ function getCalloutStyleType(type: string): string {
     return styleMap[lowerType] || lowerType;
 }
 
-// Icon widget
-class CalloutIconWidget extends WidgetType {
-    constructor(private iconSvg: string, private title: string, private styleType: string) { super(); }
+// Chevron SVG for fold toggle
+const CHEVRON_RIGHT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+const CHEVRON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
-    toDOM(): HTMLElement {
+// Icon widget with optional fold toggle
+class CalloutIconWidget extends WidgetType {
+    constructor(
+        private iconSvg: string,
+        private title: string,
+        private styleType: string,
+        private isFoldable: boolean,
+        private isFolded: boolean,
+        private lineNumber: number
+    ) {
+        super();
+    }
+
+    toDOM(view: EditorView): HTMLElement {
         const span = document.createElement('span');
         span.className = `cm-callout-header-widget cm-callout-header-${this.styleType}`;
 
@@ -79,17 +133,45 @@ class CalloutIconWidget extends WidgetType {
         span.appendChild(document.createTextNode(' '));
         span.appendChild(titleSpan);
 
+        // Add fold toggle on the right if foldable
+        if (this.isFoldable) {
+            const foldToggle = document.createElement('span');
+            foldToggle.className = `cm-callout-fold-toggle ${this.isFolded ? 'cm-callout-folded' : ''}`;
+            foldToggle.innerHTML = this.isFolded ? CHEVRON_RIGHT : CHEVRON_DOWN;
+            foldToggle.setAttribute('aria-label', this.isFolded ? 'Expand callout' : 'Collapse callout');
+            foldToggle.setAttribute('role', 'button');
+            foldToggle.setAttribute('tabindex', '0');
+
+            // Store line number for click handler
+            foldToggle.dataset.calloutLine = String(this.lineNumber);
+
+            foldToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                view.dispatch({
+                    effects: toggleFoldEffect.of({ line: this.lineNumber })
+                });
+            });
+
+            span.appendChild(foldToggle);
+        }
+
         return span;
     }
 
     eq(other: CalloutIconWidget): boolean {
-        return this.iconSvg === other.iconSvg && this.title === other.title;
+        return this.iconSvg === other.iconSvg &&
+            this.title === other.title &&
+            this.isFoldable === other.isFoldable &&
+            this.isFolded === other.isFolded &&
+            this.lineNumber === other.lineNumber;
     }
 }
 
-// Decoration to hide text visually
-const hiddenSyntax = Decoration.mark({ class: 'cm-callout-hidden-syntax' });
-const hiddenPrefix = Decoration.mark({ class: 'cm-callout-hidden-prefix' });
+// Decoration to hide text by replacing it with nothing
+// Using Decoration.replace() instead of mark + CSS hide to avoid position calculation errors
+const hiddenSyntax = Decoration.replace({});
+const hiddenPrefix = Decoration.replace({});
 
 interface DecoEntry {
     from: number;
@@ -98,10 +180,14 @@ interface DecoEntry {
     sortKey: number;
 }
 
+// Decoration to hide entire content lines when folded
+const hiddenLine = Decoration.line({ class: 'cm-callout-hidden-line' });
+
 function buildDecorations(view: EditorView): DecorationSet {
     const decos: DecoEntry[] = [];
     const doc = view.state.doc;
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
+    const foldStates = view.state.field(foldState);
 
     for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
         const line = doc.line(lineNum);
@@ -110,10 +196,26 @@ function buildDecorations(view: EditorView): DecorationSet {
         if (match) {
             const syntaxPart = match[1];
             const type = match[2].toLowerCase();
+            const foldIndicator = match[3]; // '+' or '-' or undefined
             const title = match[4]?.trim() || '';
             const styleType = getCalloutStyleType(type);
             const typeInfo = CALLOUT_TYPES[type] || { icon: ICONS.info, defaultTitle: type };
             const displayTitle = title || typeInfo.defaultTitle;
+
+            // Determine if this callout is foldable (has + or - indicator)
+            const isFoldable = foldIndicator === '+' || foldIndicator === '-';
+
+            // Get fold state: check user state first, then fall back to indicator default
+            // '-' means collapsed by default, '+' means expanded by default
+            let isFolded = false;
+            if (isFoldable) {
+                if (foldStates.has(lineNum)) {
+                    isFolded = foldStates.get(lineNum)!;
+                } else {
+                    // Default based on indicator: '-' = folded, '+' = expanded
+                    isFolded = foldIndicator === '-';
+                }
+            }
 
             let endLine = lineNum;
             for (let nextLine = lineNum + 1; nextLine <= doc.lines; nextLine++) {
@@ -125,26 +227,55 @@ function buildDecorations(view: EditorView): DecorationSet {
             }
 
             const isOnCallout = cursorLine >= lineNum && cursorLine <= endLine;
+            const hasContentLines = endLine > lineNum;
 
-            // Apply line decorations to all lines
-            for (let i = lineNum; i <= endLine; i++) {
+            // Apply line decorations to header line
+            decos.push({
+                from: line.from,
+                to: line.from,
+                deco: Decoration.line({ class: `cm-callout-line cm-callout-${styleType}` }),
+                sortKey: 0,
+            });
+
+            // Apply line decorations to content lines (if not folded or editing)
+            for (let i = lineNum + 1; i <= endLine; i++) {
                 const calloutLine = doc.line(i);
-                decos.push({
-                    from: calloutLine.from,
-                    to: calloutLine.from,
-                    deco: Decoration.line({ class: `cm-callout-line cm-callout-${styleType}` }),
-                    sortKey: 0,
-                });
+
+                if (isFolded && !isOnCallout) {
+                    // Hide content lines when folded
+                    decos.push({
+                        from: calloutLine.from,
+                        to: calloutLine.from,
+                        deco: hiddenLine,
+                        sortKey: 0,
+                    });
+                } else {
+                    // Show with styling
+                    decos.push({
+                        from: calloutLine.from,
+                        to: calloutLine.from,
+                        deco: Decoration.line({ class: `cm-callout-line cm-callout-${styleType}` }),
+                        sortKey: 0,
+                    });
+                }
             }
 
             // If NOT editing the callout, hide syntax and show widget
             if (!isOnCallout) {
-                // Add icon/title widget at start
+                // Add icon/title widget at start (with fold toggle if foldable and has content)
+                const showFoldable = isFoldable && hasContentLines;
                 decos.push({
                     from: line.from,
                     to: line.from,
                     deco: Decoration.widget({
-                        widget: new CalloutIconWidget(typeInfo.icon, displayTitle, styleType),
+                        widget: new CalloutIconWidget(
+                            typeInfo.icon,
+                            displayTitle,
+                            styleType,
+                            showFoldable,
+                            isFolded,
+                            lineNum
+                        ),
                         side: -1,
                     }),
                     sortKey: 1,
@@ -169,17 +300,19 @@ function buildDecorations(view: EditorView): DecorationSet {
                     });
                 }
 
-                // Hide "> " prefix on content lines
-                for (let i = lineNum + 1; i <= endLine; i++) {
-                    const contentLine = doc.line(i);
-                    const prefixMatch = contentLine.text.match(/^>\s?/);
-                    if (prefixMatch) {
-                        decos.push({
-                            from: contentLine.from,
-                            to: contentLine.from + prefixMatch[0].length,
-                            deco: hiddenPrefix,
-                            sortKey: 2,
-                        });
+                // Hide "> " prefix on content lines (only if not folded)
+                if (!isFolded) {
+                    for (let i = lineNum + 1; i <= endLine; i++) {
+                        const contentLine = doc.line(i);
+                        const prefixMatch = contentLine.text.match(/^>\s?/);
+                        if (prefixMatch) {
+                            decos.push({
+                                from: contentLine.from,
+                                to: contentLine.from + prefixMatch[0].length,
+                                deco: hiddenPrefix,
+                                sortKey: 2,
+                            });
+                        }
                     }
                 }
             }
@@ -207,7 +340,11 @@ const calloutPlugin = ViewPlugin.fromClass(
         }
 
         update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+            // Rebuild on doc changes, viewport changes, selection changes, or fold state changes
+            const hasFoldEffect = update.transactions.some(tr =>
+                tr.effects.some(e => e.is(toggleFoldEffect))
+            );
+            if (update.docChanged || update.viewportChanged || update.selectionSet || hasFoldEffect) {
                 this.decorations = buildDecorations(update.view);
             }
         }
@@ -223,19 +360,35 @@ const calloutTheme = EditorView.baseTheme({
         borderLeft: '4px solid var(--callout-info-border)',
         paddingLeft: '12px',
     },
-    // Hidden syntax
-    '.cm-callout-hidden-syntax, .cm-callout-hidden-prefix': {
-        display: 'inline-block',
-        width: '0',
-        overflow: 'hidden',
-        color: 'transparent',
-        fontSize: '0',
+    // Hidden content lines when folded
+    '.cm-callout-hidden-line': {
+        display: 'none !important',
+    },
+    // Fold toggle button
+    '.cm-callout-fold-toggle': {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '16px',
+        height: '16px',
+        cursor: 'pointer',
+        borderRadius: '3px',
+        transition: 'background-color 0.15s ease, transform 0.15s ease',
+        marginLeft: '6px',
+        flexShrink: '0',
+    },
+    '.cm-callout-fold-toggle:hover': {
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    '.cm-callout-fold-toggle svg': {
+        width: '12px',
+        height: '12px',
     },
     // Header widget
     '.cm-callout-header-widget': {
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '6px',
         fontWeight: '600',
         verticalAlign: 'middle',
         lineHeight: '1',
@@ -306,5 +459,5 @@ const calloutTheme = EditorView.baseTheme({
 });
 
 export function calloutExtension(): Extension {
-    return [calloutPlugin, calloutTheme];
+    return [foldState, calloutPlugin, calloutTheme];
 }
