@@ -98,7 +98,7 @@ function createTagPlugin(config: TagConfig) {
             }
 
             update(update: ViewUpdate) {
-                if (update.docChanged || update.viewportChanged) {
+                if (update.docChanged || update.viewportChanged || update.selectionSet) {
                     this.decorations = buildTagDecorations(update.view, config.onClick);
                 }
             }

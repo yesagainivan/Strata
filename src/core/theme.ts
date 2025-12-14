@@ -246,16 +246,6 @@ const baseTheme = EditorView.baseTheme({
     '.cm-callout-title': {
         fontWeight: '600',
     },
-
-    // Hidden marks (will be shown on cursor hover)
-    '.cm-hidden-mark': {
-        fontSize: '0',
-        color: 'transparent',
-    },
-    '.cm-active-line .cm-hidden-mark': {
-        fontSize: 'inherit',
-        color: 'var(--editor-gutter-text)',
-    },
 });
 
 /**

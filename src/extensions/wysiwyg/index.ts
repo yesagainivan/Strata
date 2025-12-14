@@ -16,8 +16,9 @@ import { syntaxTree } from '@codemirror/language';
 
 /**
  * Decoration for hidden marks (like ** for bold)
+ * Using Decoration.replace() instead of mark + CSS hide to avoid position calculation errors
  */
-const hiddenMark = Decoration.mark({ class: 'cm-hidden-mark' });
+const hiddenMark = Decoration.replace({});
 
 /**
  * Heading level classes
@@ -73,10 +74,19 @@ class TaskCheckboxWidget extends WidgetType {
 }
 
 /**
+ * Decoration entry for sorting before adding to builder
+ */
+interface DecoEntry {
+    from: number;
+    to: number;
+    deco: Decoration;
+}
+
+/**
  * Build decorations for the visible content
  */
 function buildDecorations(view: EditorView): DecorationSet {
-    const builder = new RangeSetBuilder<Decoration>();
+    const decos: DecoEntry[] = [];
     const doc = view.state.doc;
 
     // Get the line containing the cursor
@@ -95,7 +105,7 @@ function buildDecorations(view: EditorView): DecorationSet {
                     const level = parseInt(node.name.replace('ATXHeading', ''), 10) || 1;
 
                     // Apply heading styling to the entire heading
-                    builder.add(node.from, node.to, getHeadingDecoration(level));
+                    decos.push({ from: node.from, to: node.to, deco: getHeadingDecoration(level) });
 
                     // Find and hide the heading marks (# characters) when not on active line
                     if (!isActiveLine) {
@@ -103,56 +113,56 @@ function buildDecorations(view: EditorView): DecorationSet {
                         const text = line.text;
                         const match = text.match(/^(#{1,6})\s/);
                         if (match) {
-                            builder.add(node.from, node.from + match[0].length, hiddenMark);
+                            decos.push({ from: node.from, to: node.from + match[0].length, deco: hiddenMark });
                         }
                     }
                 }
 
                 // Strong/Bold (**text** or __text__)
                 if (node.name === 'StrongEmphasis') {
-                    builder.add(node.from, node.to, formatDecorations.strong);
+                    decos.push({ from: node.from, to: node.to, deco: formatDecorations.strong });
 
                     if (!isActiveLine) {
                         // Hide opening marks
-                        builder.add(node.from, node.from + 2, hiddenMark);
+                        decos.push({ from: node.from, to: node.from + 2, deco: hiddenMark });
                         // Hide closing marks
-                        builder.add(node.to - 2, node.to, hiddenMark);
+                        decos.push({ from: node.to - 2, to: node.to, deco: hiddenMark });
                     }
                 }
 
                 // Emphasis/Italic (*text* or _text_)
                 if (node.name === 'Emphasis') {
-                    builder.add(node.from, node.to, formatDecorations.emphasis);
+                    decos.push({ from: node.from, to: node.to, deco: formatDecorations.emphasis });
 
                     if (!isActiveLine) {
-                        builder.add(node.from, node.from + 1, hiddenMark);
-                        builder.add(node.to - 1, node.to, hiddenMark);
+                        decos.push({ from: node.from, to: node.from + 1, deco: hiddenMark });
+                        decos.push({ from: node.to - 1, to: node.to, deco: hiddenMark });
                     }
                 }
 
                 // Strikethrough (~~text~~)
                 if (node.name === 'Strikethrough') {
-                    builder.add(node.from, node.to, formatDecorations.strikethrough);
+                    decos.push({ from: node.from, to: node.to, deco: formatDecorations.strikethrough });
 
                     if (!isActiveLine) {
-                        builder.add(node.from, node.from + 2, hiddenMark);
-                        builder.add(node.to - 2, node.to, hiddenMark);
+                        decos.push({ from: node.from, to: node.from + 2, deco: hiddenMark });
+                        decos.push({ from: node.to - 2, to: node.to, deco: hiddenMark });
                     }
                 }
 
                 // Inline code (`code`)
                 if (node.name === 'InlineCode') {
-                    builder.add(node.from, node.to, formatDecorations.inlineCode);
+                    decos.push({ from: node.from, to: node.to, deco: formatDecorations.inlineCode });
 
                     if (!isActiveLine) {
-                        builder.add(node.from, node.from + 1, hiddenMark);
-                        builder.add(node.to - 1, node.to, hiddenMark);
+                        decos.push({ from: node.from, to: node.from + 1, deco: hiddenMark });
+                        decos.push({ from: node.to - 1, to: node.to, deco: hiddenMark });
                     }
                 }
 
                 // Links [text](url)
                 if (node.name === 'Link') {
-                    builder.add(node.from, node.to, formatDecorations.link);
+                    decos.push({ from: node.from, to: node.to, deco: formatDecorations.link });
                 }
 
                 // Blockquotes - but skip callouts (> [!type])
@@ -160,7 +170,7 @@ function buildDecorations(view: EditorView): DecorationSet {
                     const text = doc.sliceString(node.from, Math.min(node.from + 10, node.to));
                     // Only apply blockquote styling if NOT a callout
                     if (!text.match(/^>\s*\[!/)) {
-                        builder.add(node.from, node.to, formatDecorations.blockquote);
+                        decos.push({ from: node.from, to: node.to, deco: formatDecorations.blockquote });
                     }
                 }
 
@@ -170,19 +180,27 @@ function buildDecorations(view: EditorView): DecorationSet {
                     const checked = text.includes('x') || text.includes('X');
 
                     if (!isActiveLine) {
-                        builder.add(
-                            node.from,
-                            node.to,
-                            Decoration.replace({
+                        decos.push({
+                            from: node.from,
+                            to: node.to,
+                            deco: Decoration.replace({
                                 widget: new TaskCheckboxWidget(checked),
-                            })
-                        );
+                            }),
+                        });
                     }
                 }
             },
         });
     }
 
+    // Sort by position (required for RangeSetBuilder)
+    decos.sort((a, b) => a.from - b.from || a.to - b.to);
+
+    // Build the decoration set
+    const builder = new RangeSetBuilder<Decoration>();
+    for (const { from, to, deco } of decos) {
+        builder.add(from, to, deco);
+    }
     return builder.finish();
 }
 

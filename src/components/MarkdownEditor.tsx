@@ -65,35 +65,41 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
         const isControlled = value !== undefined;
         const lastValueRef = useRef<string>(value ?? defaultValue);
 
-        // Handle wikilink clicks
+        // Store latest callbacks in a ref to avoid stale closures
+        const callbacksRef = useRef({ onChange, onWikilinkClick, onTagClick, onFrontmatterChange });
+        useEffect(() => {
+            callbacksRef.current = { onChange, onWikilinkClick, onTagClick, onFrontmatterChange };
+        });
+
+        // Handle wikilink clicks - reads from ref to always get latest callback
         const handleWikilinkClick = useCallback(
             (target: string, alias?: string) => {
-                if (onWikilinkClick) {
+                if (callbacksRef.current.onWikilinkClick) {
                     const data = parseWikilinkData(target, alias);
-                    onWikilinkClick(data);
+                    callbacksRef.current.onWikilinkClick(data);
                 }
             },
-            [onWikilinkClick]
+            []
         );
 
-        // Handle tag clicks
+        // Handle tag clicks - reads from ref to always get latest callback
         const handleTagClick = useCallback(
             (tag: string) => {
-                if (onTagClick) {
-                    onTagClick(tag);
+                if (callbacksRef.current.onTagClick) {
+                    callbacksRef.current.onTagClick(tag);
                 }
             },
-            [onTagClick]
+            []
         );
 
-        // Handle content changes
+        // Handle content changes - reads from ref to always get latest callbacks
         const handleChange = useCallback(
             (newValue: string) => {
                 lastValueRef.current = newValue;
-                onChange?.(newValue);
+                callbacksRef.current.onChange?.(newValue);
 
                 // Parse frontmatter if callback provided
-                if (onFrontmatterChange) {
+                if (callbacksRef.current.onFrontmatterChange) {
                     const frontmatterMatch = newValue.match(/^---\n([\s\S]*?)\n---/);
                     if (frontmatterMatch) {
                         try {
@@ -108,14 +114,14 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                                     frontmatter[key] = value;
                                 }
                             }
-                            onFrontmatterChange(frontmatter);
+                            callbacksRef.current.onFrontmatterChange(frontmatter);
                         } catch {
                             // Ignore parsing errors
                         }
                     }
                 }
             },
-            [onChange, onFrontmatterChange]
+            []
         );
 
         // Initialize editor
