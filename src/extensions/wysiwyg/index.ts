@@ -155,9 +155,13 @@ function buildDecorations(view: EditorView): DecorationSet {
                     builder.add(node.from, node.to, formatDecorations.link);
                 }
 
-                // Blockquotes
+                // Blockquotes - but skip callouts (> [!type])
                 if (node.name === 'Blockquote') {
-                    builder.add(node.from, node.to, formatDecorations.blockquote);
+                    const text = doc.sliceString(node.from, Math.min(node.from + 10, node.to));
+                    // Only apply blockquote styling if NOT a callout
+                    if (!text.match(/^>\s*\[!/)) {
+                        builder.add(node.from, node.to, formatDecorations.blockquote);
+                    }
                 }
 
                 // Task list items [ ] or [x]
