@@ -1,10 +1,12 @@
 /**
  * Callout extension for Obsidian-style admonitions
+ * 
  * Syntax: > [!type] Title
- * Foldable with + or - after type
+ * 
+ * Final version with SVG icons
  */
 
-import { Extension, RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
+import { Extension, RangeSetBuilder } from '@codemirror/state';
 import {
     Decoration,
     DecorationSet,
@@ -14,23 +16,37 @@ import {
     WidgetType,
 } from '@codemirror/view';
 
-export const CALLOUT_TYPES: Record<string, { icon: string; defaultTitle: string }> = {
-    note: { icon: '📝', defaultTitle: 'Note' },
-    info: { icon: 'ℹ️', defaultTitle: 'Info' },
-    tip: { icon: '💡', defaultTitle: 'Tip' },
-    warning: { icon: '⚠️', defaultTitle: 'Warning' },
-    danger: { icon: '🚨', defaultTitle: 'Danger' },
-    success: { icon: '✅', defaultTitle: 'Success' },
-    question: { icon: '❓', defaultTitle: 'Question' },
-    quote: { icon: '💬', defaultTitle: 'Quote' },
-    example: { icon: '📋', defaultTitle: 'Example' },
-    bug: { icon: '🐛', defaultTitle: 'Bug' },
-    important: { icon: '🔥', defaultTitle: 'Important' },
-    caution: { icon: '⚠️', defaultTitle: 'Caution' },
-    abstract: { icon: '📄', defaultTitle: 'Abstract' },
+// SVG icon strings
+const ICONS = {
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    danger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    tip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
+    question: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    quote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>',
+    example: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+    bug: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="6" width="8" height="14" rx="4"/><path d="M6 9h12M6 15h12M19 9l2-2M19 15l2 2M5 9 3 7M5 15l-2 2m14-10V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>',
+    note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
 };
 
-const CALLOUT_HEADER_REGEX = /^>\s*\[!(\w+)\]([+-])?\s*(.*)?$/;
+export const CALLOUT_TYPES: Record<string, { icon: string; defaultTitle: string }> = {
+    note: { icon: ICONS.note, defaultTitle: 'Note' },
+    info: { icon: ICONS.info, defaultTitle: 'Info' },
+    tip: { icon: ICONS.tip, defaultTitle: 'Tip' },
+    warning: { icon: ICONS.warning, defaultTitle: 'Warning' },
+    danger: { icon: ICONS.danger, defaultTitle: 'Danger' },
+    success: { icon: ICONS.success, defaultTitle: 'Success' },
+    question: { icon: ICONS.question, defaultTitle: 'Question' },
+    quote: { icon: ICONS.quote, defaultTitle: 'Quote' },
+    example: { icon: ICONS.example, defaultTitle: 'Example' },
+    bug: { icon: ICONS.bug, defaultTitle: 'Bug' },
+    important: { icon: ICONS.warning, defaultTitle: 'Important' },
+    caution: { icon: ICONS.warning, defaultTitle: 'Caution' },
+    abstract: { icon: ICONS.note, defaultTitle: 'Abstract' },
+};
+
+const CALLOUT_HEADER_REGEX = /^(>\s*\[!(\w+)\]([+-])?)\s*(.*)?$/;
 
 function getCalloutStyleType(type: string): string {
     const lowerType = type.toLowerCase();
@@ -43,233 +59,142 @@ function getCalloutStyleType(type: string): string {
     return styleMap[lowerType] || lowerType;
 }
 
-interface CalloutBlock {
-    type: string;
-    styleType: string;
-    title: string;
-    icon: string;
-    foldable: boolean;
-    folded: boolean;
-    startLine: number;
-    endLine: number;
-    headerFrom: number;
-    headerTo: number;
+// Icon widget
+class CalloutIconWidget extends WidgetType {
+    constructor(private iconSvg: string, private title: string, private styleType: string) { super(); }
+
+    toDOM(): HTMLElement {
+        const span = document.createElement('span');
+        span.className = `cm-callout-header-widget cm-callout-header-${this.styleType}`;
+
+        const iconWrapper = document.createElement('span');
+        iconWrapper.className = 'cm-callout-icon';
+        iconWrapper.innerHTML = this.iconSvg;
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'cm-callout-title';
+        titleSpan.textContent = this.title;
+
+        span.appendChild(iconWrapper);
+        span.appendChild(document.createTextNode(' '));
+        span.appendChild(titleSpan);
+
+        return span;
+    }
+
+    eq(other: CalloutIconWidget): boolean {
+        return this.iconSvg === other.iconSvg && this.title === other.title;
+    }
 }
 
-const toggleCalloutFold = StateEffect.define<{ line: number }>();
+// Decoration to hide text visually
+const hiddenSyntax = Decoration.mark({ class: 'cm-callout-hidden-syntax' });
+const hiddenPrefix = Decoration.mark({ class: 'cm-callout-hidden-prefix' });
 
-const foldedCalloutsField = StateField.define<Set<number>>({
-    create() { return new Set(); },
-    update(folded, tr) {
-        let newFolded = folded;
-        for (const e of tr.effects) {
-            if (e.is(toggleCalloutFold)) {
-                newFolded = new Set(folded);
-                if (newFolded.has(e.value.line)) {
-                    newFolded.delete(e.value.line);
-                } else {
-                    newFolded.add(e.value.line);
-                }
-            }
-        }
-        return newFolded;
-    },
-});
+interface DecoEntry {
+    from: number;
+    to: number;
+    deco: Decoration;
+    sortKey: number;
+}
 
-function findCallouts(view: EditorView): CalloutBlock[] {
-    const callouts: CalloutBlock[] = [];
+function buildDecorations(view: EditorView): DecorationSet {
+    const decos: DecoEntry[] = [];
     const doc = view.state.doc;
-    const foldedSet = view.state.field(foldedCalloutsField, false) || new Set();
+    const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 
-    let lineNum = 1;
-    while (lineNum <= doc.lines) {
+    for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
         const line = doc.line(lineNum);
         const match = line.text.match(CALLOUT_HEADER_REGEX);
 
         if (match) {
-            const type = match[1].toLowerCase();
-            const foldIndicator = match[2];
-            const title = match[3]?.trim() || '';
-            const typeInfo = CALLOUT_TYPES[type] || { icon: '📌', defaultTitle: type };
-            const startLine = lineNum;
+            const syntaxPart = match[1];
+            const type = match[2].toLowerCase();
+            const title = match[4]?.trim() || '';
+            const styleType = getCalloutStyleType(type);
+            const typeInfo = CALLOUT_TYPES[type] || { icon: ICONS.info, defaultTitle: type };
+            const displayTitle = title || typeInfo.defaultTitle;
 
             let endLine = lineNum;
             for (let nextLine = lineNum + 1; nextLine <= doc.lines; nextLine++) {
-                const nextLineObj = doc.line(nextLine);
-                if (nextLineObj.text.startsWith('>')) {
+                if (doc.line(nextLine).text.startsWith('>')) {
                     endLine = nextLine;
                 } else {
                     break;
                 }
             }
 
-            const isFoldable = foldIndicator === '+' || foldIndicator === '-';
-            const isInitiallyFolded = foldIndicator === '-';
-            const isFoldedByState = foldedSet.has(startLine);
+            const isOnCallout = cursorLine >= lineNum && cursorLine <= endLine;
 
-            callouts.push({
-                type,
-                styleType: getCalloutStyleType(type),
-                title: title || typeInfo.defaultTitle,
-                icon: typeInfo.icon,
-                foldable: isFoldable,
-                folded: isFoldable && (isFoldedByState !== isInitiallyFolded ? isFoldedByState : isInitiallyFolded),
-                startLine,
-                endLine,
-                headerFrom: line.from,
-                headerTo: line.to,
-            });
-
-            lineNum = endLine + 1;
-        } else {
-            lineNum++;
-        }
-    }
-
-    return callouts;
-}
-
-class CalloutHeaderWidget extends WidgetType {
-    constructor(
-        private callout: CalloutBlock,
-        private onToggle: () => void
-    ) { super(); }
-
-    toDOM(): HTMLElement {
-        const wrapper = document.createElement('div');
-        wrapper.className = `cm-callout-header cm-callout-header-${this.callout.styleType}`;
-
-        const icon = document.createElement('span');
-        icon.className = 'cm-callout-icon';
-        icon.textContent = this.callout.icon;
-        wrapper.appendChild(icon);
-
-        const title = document.createElement('span');
-        title.className = 'cm-callout-title-text';
-        title.textContent = this.callout.title;
-        wrapper.appendChild(title);
-
-        if (this.callout.foldable) {
-            const foldBtn = document.createElement('button');
-            foldBtn.className = 'cm-callout-fold-btn';
-            foldBtn.textContent = this.callout.folded ? '▶' : '▼';
-            foldBtn.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.onToggle();
-            };
-            wrapper.appendChild(foldBtn);
-        }
-
-        return wrapper;
-    }
-
-    eq(other: CalloutHeaderWidget): boolean {
-        return this.callout.type === other.callout.type &&
-            this.callout.title === other.callout.title &&
-            this.callout.folded === other.callout.folded;
-    }
-
-    ignoreEvent(): boolean { return false; }
-}
-
-function buildCalloutDecorations(view: EditorView): DecorationSet {
-    const builder = new RangeSetBuilder<Decoration>();
-    const doc = view.state.doc;
-    const cursorLine = doc.lineAt(view.state.selection.main.head).number;
-    const callouts = findCallouts(view);
-
-    // Collect all decorations with their positions
-    const lineDecos: Array<{ pos: number, deco: Decoration }> = [];
-    const markDecos: Array<{ from: number, to: number, deco: Decoration }> = [];
-
-    for (const callout of callouts) {
-        const isOnCallout = cursorLine >= callout.startLine && cursorLine <= callout.endLine;
-
-        // Apply line decorations for content lines only (not header when we're replacing it)
-        for (let lineNum = callout.startLine; lineNum <= callout.endLine; lineNum++) {
-            const line = doc.line(lineNum);
-            const isFirst = lineNum === callout.startLine;
-            const isLast = lineNum === callout.endLine;
-            const isContent = lineNum > callout.startLine;
-
-            // Skip header line decoration when we're going to replace it
-            if (isFirst && !isOnCallout) {
-                // Only add line decoration for styling, not the content
-                lineDecos.push({
-                    pos: line.from,
-                    deco: Decoration.line({
-                        class: `cm-callout-line cm-callout-${callout.styleType} cm-callout-first` +
-                            (callout.startLine === callout.endLine ? ' cm-callout-last' : '')
-                    })
+            // Apply line decorations to all lines
+            for (let i = lineNum; i <= endLine; i++) {
+                const calloutLine = doc.line(i);
+                decos.push({
+                    from: calloutLine.from,
+                    to: calloutLine.from,
+                    deco: Decoration.line({ class: `cm-callout-line cm-callout-${styleType}` }),
+                    sortKey: 0,
                 });
-                continue;
             }
 
-            // Hide content if folded
-            if (callout.folded && isContent && !isOnCallout) {
-                lineDecos.push({
-                    pos: line.from,
-                    deco: Decoration.line({ class: 'cm-callout-hidden' })
-                });
-                continue;
-            }
-
-            // Line styling for content and active header
-            let lineClass = `cm-callout-line cm-callout-${callout.styleType}`;
-            if (isFirst) lineClass += ' cm-callout-first';
-            if (isLast) lineClass += ' cm-callout-last';
-            if (isContent) lineClass += ' cm-callout-content';
-
-            lineDecos.push({
-                pos: line.from,
-                deco: Decoration.line({ class: lineClass })
-            });
-        }
-
-        // When NOT on callout, replace header text with widget (but keep on same line)
-        if (!isOnCallout) {
-            const headerLine = doc.line(callout.startLine);
-
-            // Use widget decoration instead of replace to avoid cursor issues
-            markDecos.push({
-                from: headerLine.from,
-                to: headerLine.to,
-                deco: Decoration.replace({
-                    widget: new CalloutHeaderWidget(callout, () => {
-                        view.dispatch({ effects: toggleCalloutFold.of({ line: callout.startLine }) });
+            // If NOT editing the callout, hide syntax and show widget
+            if (!isOnCallout) {
+                // Add icon/title widget at start
+                decos.push({
+                    from: line.from,
+                    to: line.from,
+                    deco: Decoration.widget({
+                        widget: new CalloutIconWidget(typeInfo.icon, displayTitle, styleType),
+                        side: -1,
                     }),
-                })
-            });
+                    sortKey: 1,
+                });
 
-            // Hide > prefix on content lines
-            for (let lineNum = callout.startLine + 1; lineNum <= callout.endLine; lineNum++) {
-                if (callout.folded) continue;
-                const line = doc.line(lineNum);
-                const prefixMatch = line.text.match(/^>\s?/);
-                if (prefixMatch) {
-                    markDecos.push({
-                        from: line.from,
-                        to: line.from + prefixMatch[0].length,
-                        deco: Decoration.replace({})
+                // Hide the syntax part
+                decos.push({
+                    from: line.from,
+                    to: line.from + syntaxPart.length,
+                    deco: hiddenSyntax,
+                    sortKey: 2,
+                });
+
+                // If there's a title, hide it too
+                if (title) {
+                    const titleStart = line.from + syntaxPart.length;
+                    decos.push({
+                        from: titleStart,
+                        to: line.to,
+                        deco: hiddenSyntax,
+                        sortKey: 3,
                     });
                 }
+
+                // Hide "> " prefix on content lines
+                for (let i = lineNum + 1; i <= endLine; i++) {
+                    const contentLine = doc.line(i);
+                    const prefixMatch = contentLine.text.match(/^>\s?/);
+                    if (prefixMatch) {
+                        decos.push({
+                            from: contentLine.from,
+                            to: contentLine.from + prefixMatch[0].length,
+                            deco: hiddenPrefix,
+                            sortKey: 2,
+                        });
+                    }
+                }
             }
+
+            lineNum = endLine;
         }
     }
 
-    // Sort and add line decorations first
-    lineDecos.sort((a, b) => a.pos - b.pos);
-    for (const { pos, deco } of lineDecos) {
-        builder.add(pos, pos, deco);
-    }
+    // Sort by position, then by sortKey
+    decos.sort((a, b) => a.from - b.from || a.to - b.to || a.sortKey - b.sortKey);
 
-    // Sort and add mark/replace decorations
-    markDecos.sort((a, b) => a.from - b.from || a.to - b.to);
-    for (const { from, to, deco } of markDecos) {
+    const builder = new RangeSetBuilder<Decoration>();
+    for (const { from, to, deco } of decos) {
         builder.add(from, to, deco);
     }
-
     return builder.finish();
 }
 
@@ -278,13 +203,12 @@ const calloutPlugin = ViewPlugin.fromClass(
         decorations: DecorationSet;
 
         constructor(view: EditorView) {
-            this.decorations = buildCalloutDecorations(view);
+            this.decorations = buildDecorations(view);
         }
 
         update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged || update.selectionSet ||
-                update.transactions.some(tr => tr.effects.some(e => e.is(toggleCalloutFold)))) {
-                this.decorations = buildCalloutDecorations(update.view);
+            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+                this.decorations = buildDecorations(update.view);
             }
         }
     },
@@ -295,49 +219,37 @@ const calloutPlugin = ViewPlugin.fromClass(
 
 const calloutTheme = EditorView.baseTheme({
     '.cm-callout-line': {
-        position: 'relative',
         backgroundColor: 'var(--callout-info-bg)',
         borderLeft: '4px solid var(--callout-info-border)',
-        paddingLeft: '12px !important',
+        paddingLeft: '12px',
     },
-    '.cm-callout-line .cm-blockquote': {
-        borderLeft: 'none !important',
-        paddingLeft: '0 !important',
-        color: 'inherit !important',
+    // Hidden syntax
+    '.cm-callout-hidden-syntax, .cm-callout-hidden-prefix': {
+        display: 'inline-block',
+        width: '0',
+        overflow: 'hidden',
+        color: 'transparent',
+        fontSize: '0',
     },
-    '.cm-callout-content': {
-        paddingTop: '0',
-        paddingBottom: '0',
-    },
-    '.cm-callout-first': {
-        borderTopLeftRadius: '8px',
-        borderTopRightRadius: '8px',
-        paddingTop: '8px',
-        marginTop: '4px',
-    },
-    '.cm-callout-last': {
-        borderBottomLeftRadius: '8px',
-        borderBottomRightRadius: '8px',
-        paddingBottom: '8px',
-        marginBottom: '4px',
-    },
-    '.cm-callout-hidden': {
-        display: 'none !important',
-    },
-    '.cm-callout-info': { backgroundColor: 'var(--callout-info-bg) !important', borderLeftColor: 'var(--callout-info-border) !important' },
-    '.cm-callout-warning': { backgroundColor: 'var(--callout-warning-bg) !important', borderLeftColor: 'var(--callout-warning-border) !important' },
-    '.cm-callout-danger': { backgroundColor: 'var(--callout-danger-bg) !important', borderLeftColor: 'var(--callout-danger-border) !important' },
-    '.cm-callout-success': { backgroundColor: 'var(--callout-success-bg) !important', borderLeftColor: 'var(--callout-success-border) !important' },
-    '.cm-callout-tip': { backgroundColor: 'var(--callout-tip-bg) !important', borderLeftColor: 'var(--callout-tip-border) !important' },
-    '.cm-callout-note': { backgroundColor: '#f0f4ff !important', borderLeftColor: '#6366f1 !important' },
-    '.cm-callout-quote': { backgroundColor: '#f8fafc !important', borderLeftColor: '#64748b !important', fontStyle: 'italic' },
-    '.cm-callout-header': {
-        display: 'flex',
+    // Header widget
+    '.cm-callout-header-widget': {
+        display: 'inline-flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '6px',
         fontWeight: '600',
+    },
+    '.cm-callout-icon': {
+        display: 'inline-flex',
+        alignItems: 'center',
+        width: '18px',
+        height: '18px',
+    },
+    '.cm-callout-icon svg': {
+        width: '100%',
+        height: '100%',
+    },
+    '.cm-callout-title': {
         fontSize: '1em',
-        lineHeight: '1.5',
     },
     '.cm-callout-header-info': { color: '#1e40af' },
     '.cm-callout-header-warning': { color: '#92400e' },
@@ -345,21 +257,50 @@ const calloutTheme = EditorView.baseTheme({
     '.cm-callout-header-success': { color: '#166534' },
     '.cm-callout-header-tip': { color: '#115e59' },
     '.cm-callout-header-note': { color: '#4338ca' },
-    '.cm-callout-header-quote': { color: '#475569' },
-    '.cm-callout-icon': { fontSize: '1.1em', lineHeight: '1' },
-    '.cm-callout-title-text': { flex: '1' },
-    '.cm-callout-fold-btn': {
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: '0.9em',
-        opacity: '0.5',
-        padding: '2px 8px',
-        borderRadius: '4px',
-        color: 'inherit',
+    // Type colors
+    '.cm-callout-info': {
+        backgroundColor: 'var(--callout-info-bg) !important',
+        borderLeftColor: 'var(--callout-info-border) !important',
+    },
+    '.cm-callout-warning': {
+        backgroundColor: 'var(--callout-warning-bg) !important',
+        borderLeftColor: 'var(--callout-warning-border) !important',
+    },
+    '.cm-callout-danger': {
+        backgroundColor: 'var(--callout-danger-bg) !important',
+        borderLeftColor: 'var(--callout-danger-border) !important',
+    },
+    '.cm-callout-success': {
+        backgroundColor: 'var(--callout-success-bg) !important',
+        borderLeftColor: 'var(--callout-success-border) !important',
+    },
+    '.cm-callout-tip': {
+        backgroundColor: 'var(--callout-tip-bg) !important',
+        borderLeftColor: 'var(--callout-tip-border) !important',
+    },
+    '.cm-callout-note': {
+        backgroundColor: '#f0f4ff !important',
+        borderLeftColor: '#6366f1 !important',
+    },
+    '.cm-callout-question': {
+        backgroundColor: '#f5f3ff !important',
+        borderLeftColor: '#8b5cf6 !important',
+    },
+    '.cm-callout-quote': {
+        backgroundColor: '#f8fafc !important',
+        borderLeftColor: '#64748b !important',
+        fontStyle: 'italic',
+    },
+    '.cm-callout-example': {
+        backgroundColor: '#f0f9ff !important',
+        borderLeftColor: '#0ea5e9 !important',
+    },
+    '.cm-callout-bug': {
+        backgroundColor: '#fef2f2 !important',
+        borderLeftColor: '#ef4444 !important',
     },
 });
 
 export function calloutExtension(): Extension {
-    return [foldedCalloutsField, calloutPlugin, calloutTheme];
+    return [calloutPlugin, calloutTheme];
 }

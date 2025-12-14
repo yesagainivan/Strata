@@ -74,7 +74,7 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
 
         // Obsidian-style extensions
         wikilinkExtension({ onClick: onWikilinkClick }),
-        calloutExtension(),
+        calloutExtension(),  // Note: Currently minimal (theme-only) due to cursor bug in ViewPlugin
         tagExtension({ onClick: onTagClick }),
 
         // Theming (in compartment for dynamic updates)
