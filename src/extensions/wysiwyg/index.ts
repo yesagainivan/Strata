@@ -74,6 +74,22 @@ class TaskCheckboxWidget extends WidgetType {
 }
 
 /**
+ * Bullet point widget for unordered lists
+ */
+class ListBulletWidget extends WidgetType {
+    toDOM(): HTMLElement {
+        const span = document.createElement('span');
+        span.className = 'cm-list-bullet';
+        span.textContent = '•';
+        return span;
+    }
+
+    eq(other: ListBulletWidget): boolean {
+        return true;
+    }
+}
+
+/**
  * Decoration entry for sorting before adding to builder
  */
 interface DecoEntry {
@@ -187,6 +203,30 @@ function buildDecorations(view: EditorView): DecorationSet {
                                 widget: new TaskCheckboxWidget(checked),
                             }),
                         });
+                    }
+                }
+                // List markers (bullets - * or - or +)
+                if (node.name === 'ListMark') {
+                    const text = doc.sliceString(node.from, node.to);
+
+                    // Check if it's an unordered list marker
+                    if (/^[-*+]$/.test(text)) {
+                        if (!isActiveLine) {
+                            decos.push({
+                                from: node.from,
+                                to: node.to,
+                                deco: Decoration.replace({
+                                    widget: new ListBulletWidget(),
+                                }),
+                            });
+                        } else {
+                            // On active line, we can optionally style the marker color
+                            decos.push({
+                                from: node.from,
+                                to: node.to,
+                                deco: Decoration.mark({ class: 'cm-list-marker-source' }),
+                            });
+                        }
                     }
                 }
             },

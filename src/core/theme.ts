@@ -185,6 +185,15 @@ const baseTheme = EditorView.baseTheme({
         color: 'var(--syntax-list-marker)',
         fontWeight: '600',
     },
+    '.cm-list-bullet': {
+        color: 'var(--syntax-list-marker)',
+        fontWeight: 'bold',
+        paddingRight: '4px',
+    },
+    '.cm-list-marker-source': {
+        color: 'var(--syntax-list-marker)',
+        fontWeight: 'bold',
+    },
 
     // Code blocks
     '.cm-code-block': {
