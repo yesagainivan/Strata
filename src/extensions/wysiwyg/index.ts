@@ -304,6 +304,54 @@ function buildDecorations(view: EditorView): DecorationSet {
                     }
                 }
 
+                // Fenced code blocks (```code```)
+                if (node.name === 'FencedCode') {
+                    // Apply line decoration to each line in the code block
+                    const startLine = doc.lineAt(node.from).number;
+                    const endLine = doc.lineAt(node.to).number;
+
+                    // Check if cursor is within this code block
+                    const isInsideBlock = cursorLine >= startLine && cursorLine <= endLine;
+
+                    for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
+                        const line = doc.line(lineNum);
+
+                        // Determine if this line is first, last, or middle for rounded corners
+                        let blockClass = 'cm-code-block';
+                        if (lineNum === startLine) {
+                            blockClass += ' cm-code-block-start';
+                        }
+                        if (lineNum === endLine) {
+                            blockClass += ' cm-code-block-end';
+                        }
+
+                        decos.push({
+                            from: line.from,
+                            to: line.from,
+                            deco: Decoration.line({ class: blockClass }),
+                        });
+                    }
+
+                    // Hide the opening ``` and closing ``` when cursor is NOT inside the block
+                    if (!isInsideBlock) {
+                        // Hide the entire first line (opening ```)
+                        const firstLine = doc.line(startLine);
+                        decos.push({
+                            from: firstLine.from,
+                            to: firstLine.to,
+                            deco: hiddenMark,
+                        });
+
+                        // Hide the entire last line (closing ```)
+                        const lastLine = doc.line(endLine);
+                        decos.push({
+                            from: lastLine.from,
+                            to: lastLine.to,
+                            deco: hiddenMark,
+                        });
+                    }
+                }
+
                 // Strong/Bold (**text** or __text__)
                 if (node.name === 'StrongEmphasis') {
                     decos.push({ from: node.from, to: node.to, deco: formatDecorations.strong });

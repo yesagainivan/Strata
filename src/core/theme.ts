@@ -262,8 +262,17 @@ const baseTheme = EditorView.baseTheme({
     '.cm-code-block': {
         fontFamily: '"SF Mono", Monaco, "Cascadia Code", monospace',
         backgroundColor: 'var(--syntax-code-bg)',
-        borderRadius: '6px',
-        padding: '12px',
+        padding: '0 12px',
+    },
+    '.cm-code-block-start': {
+        borderTopLeftRadius: '6px',
+        borderTopRightRadius: '6px',
+        paddingTop: '8px',
+    },
+    '.cm-code-block-end': {
+        borderBottomLeftRadius: '6px',
+        borderBottomRightRadius: '6px',
+        paddingBottom: '8px',
     },
 
     // Wikilinks
