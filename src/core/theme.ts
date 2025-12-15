@@ -268,10 +268,13 @@ const baseTheme = EditorView.baseTheme({
     '.cm-horizontal-rule': {
         display: 'block',
         width: '100%',
-        height: '1px',
-        backgroundColor: 'var(--editor-gutter-text)',
-        margin: '16px 0',
+        height: '0',
+        borderTop: '1px solid var(--editor-gutter-text)',
+        padding: '16px 0',
         opacity: '0.5',
+        boxSizing: 'border-box',
+        // Let clicks pass through to position cursor correctly
+        pointerEvents: 'none',
     },
     '.cm-hr-source': {
         color: 'var(--editor-gutter-text)',

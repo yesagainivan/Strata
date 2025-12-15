@@ -102,6 +102,8 @@ class MathWidget extends WidgetType {
     toDOM(): HTMLElement {
         const wrapper = document.createElement(this.isBlock ? 'div' : 'span');
         wrapper.className = this.isBlock ? 'cm-math-block' : 'cm-math-inline';
+        // Prevent cursor from entering widget and causing selection issues
+        wrapper.setAttribute('contenteditable', 'false');
 
         if (this.error) {
             wrapper.className += ' cm-math-error';
@@ -221,12 +223,14 @@ const mathPlugin = ViewPlugin.fromClass(
 const mathTheme = EditorView.baseTheme({
     '.cm-math-inline': {
         padding: '0 2px',
+        userSelect: 'none',
     },
     '.cm-math-block': {
         display: 'block',
         textAlign: 'center',
         padding: '12px 0',
         margin: '8px 0',
+        userSelect: 'none',
     },
     '.cm-math-source': {
         fontFamily: '"SF Mono", Monaco, "Cascadia Code", monospace',

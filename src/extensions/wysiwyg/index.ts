@@ -119,11 +119,19 @@ class HorizontalRuleWidget extends WidgetType {
     toDOM(): HTMLElement {
         const hr = document.createElement('div');
         hr.className = 'cm-horizontal-rule';
+        // Make the widget non-editable and prevent cursor from entering
+        hr.setAttribute('contenteditable', 'false');
         return hr;
     }
 
     eq(): boolean {
         return true;
+    }
+
+    ignoreEvent(): boolean {
+        // Return false to let click events pass through to editor
+        // This prevents the widget from capturing/eating mouse events
+        return false;
     }
 }
 
