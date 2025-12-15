@@ -11,6 +11,7 @@ import {
     EditorView,
     WidgetType,
 } from '@codemirror/view';
+import katex from 'katex';
 
 // Table separator pattern: matches |---|---|---| with any number of columns
 const TABLE_SEPARATOR_REGEX = /^\|?(\s*:?-+:?\s*\|)+\s*:?-*:?\s*\|?$/;
@@ -48,6 +49,148 @@ function parseRow(row: string): string[] {
     const withoutPipes = trimmed.startsWith('|') ? trimmed.slice(1) : trimmed;
     const final = withoutPipes.endsWith('|') ? withoutPipes.slice(0, -1) : withoutPipes;
     return final.split('|').map(cell => cell.trim());
+}
+
+/**
+ * Render cell content with markdown syntax support
+ * Supports: [[wikilinks]], #tags, **bold**, *italic*, `code`, ~~strikethrough~~, ==highlight==, $math$
+ */
+function renderCellContent(cell: string, container: HTMLElement): void {
+    // Order matters: process more specific patterns first
+    const patterns: { regex: RegExp; replace: (match: RegExpMatchArray) => HTMLElement | Text }[] = [
+        // Inline math: $...$
+        {
+            regex: /\$([^$\n]+)\$/g,
+            replace: (match) => {
+                const span = document.createElement('span');
+                span.className = 'cm-math-inline';
+                try {
+                    span.innerHTML = katex.renderToString(match[1], {
+                        displayMode: false,
+                        throwOnError: false,
+                        errorColor: '#cc0000',
+                    });
+                } catch {
+                    span.className = 'cm-math-error';
+                    span.textContent = match[0];
+                }
+                return span;
+            }
+        },
+        // Wikilinks: [[target]] or [[target|alias]]
+        {
+            regex: /\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g,
+            replace: (match) => {
+                const span = document.createElement('span');
+                span.className = 'cm-wikilink';
+                span.textContent = match[3] || match[1]; // alias or target
+                span.dataset.wikilinkTarget = match[1];
+                if (match[3]) span.dataset.wikilinkAlias = match[3];
+                if (match[2]) span.title = `${match[1]}#${match[2]}`;
+                else span.title = match[1];
+                return span;
+            }
+        },
+        // Tags: #tag or #nested/tag
+        {
+            regex: /(?<![&\w])#([\w\/-]+)/g,
+            replace: (match) => {
+                const span = document.createElement('span');
+                span.className = 'cm-tag';
+                span.textContent = `#${match[1]}`;
+                span.dataset.tag = match[1];
+                return span;
+            }
+        },
+        // Inline code: `code`
+        {
+            regex: /`([^`]+)`/g,
+            replace: (match) => {
+                const code = document.createElement('code');
+                code.className = 'cm-table-inline-code';
+                code.textContent = match[1];
+                return code;
+            }
+        },
+        // Bold: **text** or __text__
+        {
+            regex: /\*\*([^*]+)\*\*|__([^_]+)__/g,
+            replace: (match) => {
+                const strong = document.createElement('strong');
+                strong.textContent = match[1] || match[2];
+                return strong;
+            }
+        },
+        // Italic: *text* or _text_ (but not inside words for underscores)
+        {
+            regex: /(?<!\w)\*([^*]+)\*(?!\w)|(?<!\w)_([^_]+)_(?!\w)/g,
+            replace: (match) => {
+                const em = document.createElement('em');
+                em.textContent = match[1] || match[2];
+                return em;
+            }
+        },
+        // Strikethrough: ~~text~~
+        {
+            regex: /~~([^~]+)~~/g,
+            replace: (match) => {
+                const del = document.createElement('del');
+                del.textContent = match[1];
+                return del;
+            }
+        },
+        // Highlight: ==text==
+        {
+            regex: /==([^=]+)==/g,
+            replace: (match) => {
+                const mark = document.createElement('mark');
+                mark.className = 'cm-highlight';
+                mark.textContent = match[1];
+                return mark;
+            }
+        },
+    ];
+
+    // Process the cell content with all patterns
+    let remaining = cell;
+    const fragments: (HTMLElement | Text)[] = [];
+
+    while (remaining.length > 0) {
+        let earliestMatch: { index: number; length: number; element: HTMLElement | Text } | null = null;
+
+        // Find the earliest match among all patterns
+        for (const { regex, replace } of patterns) {
+            regex.lastIndex = 0; // Reset regex state
+            const match = regex.exec(remaining);
+            if (match && (earliestMatch === null || match.index < earliestMatch.index)) {
+                earliestMatch = {
+                    index: match.index,
+                    length: match[0].length,
+                    element: replace(match as RegExpMatchArray),
+                };
+            }
+        }
+
+        if (earliestMatch) {
+            // Add text before the match
+            if (earliestMatch.index > 0) {
+                fragments.push(document.createTextNode(remaining.slice(0, earliestMatch.index)));
+            }
+            // Add the matched element
+            fragments.push(earliestMatch.element);
+            // Continue with remaining text
+            remaining = remaining.slice(earliestMatch.index + earliestMatch.length);
+        } else {
+            // No more matches, add remaining text
+            fragments.push(document.createTextNode(remaining));
+            break;
+        }
+    }
+
+    // Append all fragments to container
+    for (const fragment of fragments) {
+        container.appendChild(fragment);
+    }
 }
 
 /**
@@ -137,7 +280,7 @@ class TableWidget extends WidgetType {
 
         headerCells.forEach((cell, i) => {
             const th = document.createElement('th');
-            th.textContent = cell;
+            renderCellContent(cell, th);
             th.style.textAlign = alignments[i] || 'left';
             headerTr.appendChild(th);
         });
@@ -151,7 +294,7 @@ class TableWidget extends WidgetType {
             const cells = parseRow(row);
             cells.forEach((cell, i) => {
                 const td = document.createElement('td');
-                td.textContent = cell;
+                renderCellContent(cell, td);
                 td.style.textAlign = alignments[i] || 'left';
                 tr.appendChild(td);
             });
@@ -266,6 +409,20 @@ const tableTheme = EditorView.baseTheme({
     },
     '.cm-rendered-table tr:hover td': {
         backgroundColor: 'var(--table-row-hover, #e0f2fe)',
+    },
+    // Inline code in tables
+    '.cm-table-inline-code': {
+        fontFamily: '"SF Mono", Monaco, "Cascadia Code", monospace',
+        backgroundColor: 'var(--syntax-code-bg, #f1f5f9)',
+        padding: '1px 4px',
+        borderRadius: '3px',
+        fontSize: '0.9em',
+    },
+    // Highlights in tables
+    '.cm-rendered-table .cm-highlight': {
+        backgroundColor: 'var(--highlight-bg, #fef08a)',
+        padding: '1px 2px',
+        borderRadius: '2px',
     },
 });
 
