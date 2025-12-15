@@ -16,19 +16,20 @@ Obsidian-style features to implement in the editor.
 - [x] Horizontal rules (`---` or `***`)
 - [x] Footnotes (`[^1]` and `[^1]: definition`)
 
-## Medium Priority
+
+## Community Contributions Welcome
+
+- [ ] Multi-line block math (`$$` on separate lines) - requires careful CM6 multi-line decoration handling
+
+### Medium Priority
 
 - [ ] Block embeds (`![[note#section]]` or `![[note^block]]`)
 - [ ] Mermaid diagrams (` ```mermaid `)
 - [ ] Comments (`%%hidden comment%%`)
 - [ ] Block IDs (`^block-id`)
 
-## Nice to Have
+### Nice to Have
 
 - [ ] Audio/video embeds (`![[video.mp4]]`)
 - [ ] PDF embeds (`![[document.pdf]]`)
 - [ ] Query blocks (dataview-style)
-
-## Community Contributions Welcome
-
-- [ ] Multi-line block math (`$$` on separate lines) - requires careful CM6 multi-line decoration handling

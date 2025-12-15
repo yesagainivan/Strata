@@ -128,7 +128,7 @@ function createEditor(props: MarkdownEditorProps) {
 ### Tables
 
 | Feature | Description | Status |
-|---------|-------------|--------|
+|:---------|-------------|:--------:|
 | WYSIWYG | Live preview editing | ✅ |
 | Wikilinks | \`[[note]]\` syntax | ✅ |
 | Callouts | \`> [!type]\` blocks | ✅ |
