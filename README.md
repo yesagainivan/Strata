@@ -8,8 +8,11 @@ A production-ready **CodeMirror 6** based markdown editor with Obsidian-style WY
 - 🔗 **Wikilinks** - `[[note]]`, `[[note|alias]]`, `[[note#heading]]`
 - 📌 **Callouts** - `> [!info]`, `> [!warning]`, etc. with foldable support
 - 🏷️ **Tags** - `#tag` and `#nested/tag` with click handlers
-- 📐 **Tables** - GFM tables with header/row styling
-- 🧮 **Math** - LaTeX rendering with KaTeX
+- 🖼️ **Images** - `![[image.png]]` embedding
+- 🦶 **Footnotes** - `[^1]` reference support
+- 🔦 **Highlights** - `==text==` highlighting
+- 📐 **Tables** - GFM tables (via extension)
+- 🧮 **Math** - LaTeX rendering (via extension)
 - 🌗 **Theming** - Light/dark mode with CSS variables
 - 🔌 **Extensible** - Simple API for custom syntax extensions
 - 🛡️ **Error Boundary** - Graceful error handling for production
@@ -24,19 +27,35 @@ npm run dev
 ## Usage
 
 ```tsx
-import { MarkdownEditor, EditorErrorBoundary } from './index';
+import { 
+  MarkdownEditor, 
+  EditorErrorBoundary, 
+  mathExtension, 
+  tableExtension 
+} from './index';
 
 function App() {
   const [content, setContent] = useState('# Hello World');
+  const editorRef = useRef<MarkdownEditorHandle>(null);
 
   return (
     <EditorErrorBoundary>
       <MarkdownEditor
+        ref={editorRef}
         value={content}
         onChange={setContent}
         theme="light"
-        onWikilinkClick={(data) => console.log('Navigate to:', data.target)}
-        onTagClick={(tag) => console.log('Filter by:', tag)}
+        // Optional: Configure interactions
+        wikilinkInteraction="modifier" // 'click' | 'modifier' (default)
+        tagInteraction="modifier"      // 'click' | 'modifier' (default)
+        // handlers receive event
+        onWikilinkClick={(data, event) => console.log('Navigate to:', data.target)}
+        onTagClick={(tag, event) => console.log('Filter by:', tag)}
+        // Enable optional extensions
+        extensions={[
+          mathExtension(), 
+          tableExtension()
+        ]}
       />
     </EditorErrorBoundary>
   );
@@ -95,18 +114,23 @@ const mentions = createExtension({
 | `placeholder` | `string` | Placeholder text |
 | `readOnly` | `boolean` | Read-only mode |
 | `extensions` | `Extension[]` | Additional CM6 extensions |
-| `onWikilinkClick` | `(data: WikilinkData) => void` | Wikilink click handler |
-| `onTagClick` | `(tag: string) => void` | Tag click handler |
+| `onWikilinkClick` | `(data: WikilinkData, e: MouseEvent) => void` | Wikilink click handler |
+| `onTagClick` | `(tag: string, e: MouseEvent) => void` | Tag click handler |
+| `wikilinkInteraction` | `'click' \| 'modifier'` | Interaction trigger (default: modifier) |
+| `tagInteraction` | `'click' \| 'modifier'` | Interaction trigger (default: modifier) |
 
 ### Ref Methods
 
 ```tsx
 const editorRef = useRef<MarkdownEditorHandle>(null);
 
-editorRef.current?.getValue();     // Get content
-editorRef.current?.setValue(text); // Set content
-editorRef.current?.focus();        // Focus editor
-editorRef.current?.insertText(t);  // Insert at cursor
+editorRef.current?.getValue();               // Get content
+editorRef.current?.setValue(text);           // Set content
+editorRef.current?.focus();                  // Focus editor
+editorRef.current?.insertText(text);         // Insert at cursor
+editorRef.current?.getSelection();           // Get selected text
+editorRef.current?.replaceSelection(text);   // Replace selection
+editorRef.current?.wrapSelection('**', '**');// Wrap selection
 ```
 
 ### EditorErrorBoundary Props
