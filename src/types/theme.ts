@@ -112,25 +112,52 @@ export interface CalloutConfig {
 }
 
 /**
+ * Code block syntax highlighting colors
+ */
+export interface CodeColors {
+    /** Keywords (if, else, return, const, etc.) */
+    keyword: string;
+    /** Comments */
+    comment: string;
+    /** Strings and template literals */
+    string: string;
+    /** Numbers and literals */
+    number: string;
+    /** Function names */
+    function: string;
+    /** Variable names */
+    variable: string;
+    /** Type names and classes */
+    type: string;
+    /** Properties and attributes */
+    property: string;
+    /** Operators (+, -, =, etc.) */
+    operator: string;
+    /** Punctuation (brackets, semicolons) */
+    punctuation: string;
+    /** Regex patterns */
+    regex: string;
+    /** Built-in/standard library */
+    builtin: string;
+}
+
+/**
  * Complete theme configuration for Strata Editor
  * 
  * @example
  * ```tsx
- * // Use built-in dark mode
- * <MarkdownEditor theme="dark" />
+ * // Apply theme via CSS variables on parent container
+ * const themeStyles = createThemeStyles({ mode: 'dark' });
+ * <div style={themeStyles}>
+ *   <MarkdownEditor value={content} onChange={setContent} />
+ * </div>
  * 
- * // Override specific colors
- * <MarkdownEditor theme={{
+ * // Full custom theme with code colors
+ * const customTheme: StrataTheme = {
  *   mode: 'dark',
- *   colors: { background: '#1a1a2e' }
- * }} />
- * 
- * // Full custom theme
- * <MarkdownEditor theme={{
- *   colors: { background: '#fff', foreground: '#000' },
- *   syntax: { heading: '#2563eb' },
- *   callouts: { info: { background: 'rgba(59,130,246,0.1)', border: '#3b82f6', header: '#1e40af' } }
- * }} />
+ *   colors: { background: '#1a1a2e' },
+ *   code: { keyword: '#ff79c6', string: '#f1fa8c' }
+ * };
  * ```
  */
 export interface StrataTheme {
@@ -143,7 +170,7 @@ export interface StrataTheme {
     /** Core editor colors */
     colors?: Partial<StrataColors>;
 
-    /** Syntax highlighting colors */
+    /** Syntax highlighting colors (markdown) */
     syntax?: Partial<SyntaxColors>;
 
     /** Obsidian-style elements (wikilinks, tags) */
@@ -154,4 +181,7 @@ export interface StrataTheme {
 
     /** Table styling */
     tables?: Partial<TableColors>;
+
+    /** Code block syntax highlighting */
+    code?: Partial<CodeColors>;
 }

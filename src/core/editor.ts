@@ -7,14 +7,14 @@ import { EditorView, keymap, placeholder as placeholderExt } from '@codemirror/v
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
-import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+import { syntaxHighlighting } from '@codemirror/language';
 
 import { wysiwygExtension } from '../extensions/wysiwyg';
 import { wikilinkExtension } from '../extensions/wikilink';
 import { calloutExtension } from '../extensions/callout';
 import { tagExtension } from '../extensions/tag';
 import { imageEmbedExtension } from '../extensions/imageEmbed';
-import { createEditorTheme } from './theme';
+import { createEditorTheme, codeHighlightStyle } from './theme';
 
 /**
  * Configuration for creating an editor instance
@@ -70,7 +70,7 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
             base: markdownLanguage,
             codeLanguages: languages,
         }),
-        syntaxHighlighting(defaultHighlightStyle),
+        syntaxHighlighting(codeHighlightStyle),
 
         // WYSIWYG extensions (hidden marks, styled headings)
         wysiwygExtension(),

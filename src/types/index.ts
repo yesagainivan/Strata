@@ -4,7 +4,7 @@ import { Extension } from '@codemirror/state';
 
 // Re-export theme types
 export * from './theme';
-export type { StrataTheme, StrataColors, SyntaxColors, ElementColors, TableColors, CalloutConfig, CalloutColors } from './theme';
+export type { StrataTheme, StrataColors, SyntaxColors, ElementColors, TableColors, CalloutConfig, CalloutColors, CodeColors } from './theme';
 
 /**
  * Configuration options for the MarkdownEditor component

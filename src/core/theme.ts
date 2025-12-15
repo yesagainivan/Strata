@@ -5,7 +5,9 @@
 
 import { Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import type { StrataTheme, StrataColors, SyntaxColors, ElementColors, TableColors, CalloutConfig } from '../types/theme';
+import { HighlightStyle } from '@codemirror/language';
+import { tags } from '@lezer/highlight';
+import type { StrataTheme, StrataColors, SyntaxColors, ElementColors, TableColors, CalloutConfig, CodeColors } from '../types/theme';
 
 // =============================================================================
 // DEFAULT THEME VALUES
@@ -145,6 +147,42 @@ export const DARK_CALLOUTS: CalloutConfig = {
     bug: { background: 'rgba(239, 68, 68, 0.15)', border: '#ef4444', header: '#f87171' },
 };
 
+/**
+ * Default light mode code syntax highlighting colors (GitHub-inspired)
+ */
+export const LIGHT_CODE: CodeColors = {
+    keyword: '#d73a49',
+    comment: '#6a737d',
+    string: '#032f62',
+    number: '#005cc5',
+    function: '#6f42c1',
+    variable: '#24292e',
+    type: '#22863a',
+    property: '#005cc5',
+    operator: '#d73a49',
+    punctuation: '#24292e',
+    regex: '#032f62',
+    builtin: '#e36209',
+};
+
+/**
+ * Default dark mode code syntax highlighting colors (GitHub Dark-inspired)
+ */
+export const DARK_CODE: CodeColors = {
+    keyword: '#ff7b72',
+    comment: '#8b949e',
+    string: '#a5d6ff',
+    number: '#79c0ff',
+    function: '#d2a8ff',
+    variable: '#c9d1d9',
+    type: '#7ee787',
+    property: '#79c0ff',
+    operator: '#ff7b72',
+    punctuation: '#c9d1d9',
+    regex: '#a5d6ff',
+    builtin: '#ffa657',
+};
+
 // =============================================================================
 // CSS VARIABLE GENERATION
 // =============================================================================
@@ -177,6 +215,9 @@ export function createThemeStyles(theme: StrataTheme): Record<string, string> {
         example: { ...defaultCallouts.example, ...userCallouts.example },
         bug: { ...defaultCallouts.bug, ...userCallouts.bug },
     };
+
+    // Code syntax highlighting
+    const code: CodeColors = { ...(isDark ? DARK_CODE : LIGHT_CODE), ...theme.code };
 
     return {
         // Core colors
@@ -245,6 +286,20 @@ export function createThemeStyles(theme: StrataTheme): Record<string, string> {
         '--callout-bug-bg': callouts.bug.background,
         '--callout-bug-border': callouts.bug.border,
         '--callout-header-bug': callouts.bug.header,
+
+        // Code syntax highlighting
+        '--code-keyword': code.keyword,
+        '--code-comment': code.comment,
+        '--code-string': code.string,
+        '--code-number': code.number,
+        '--code-function': code.function,
+        '--code-variable': code.variable,
+        '--code-type': code.type,
+        '--code-property': code.property,
+        '--code-operator': code.operator,
+        '--code-punctuation': code.punctuation,
+        '--code-regex': code.regex,
+        '--code-builtin': code.builtin,
     };
 }
 
@@ -529,3 +584,104 @@ export function createEditorTheme(): Extension {
     return [baseTheme, varTheme];
 }
 
+// =============================================================================
+// CODE SYNTAX HIGHLIGHTING
+// =============================================================================
+
+/**
+ * Custom syntax highlighting style using CSS variables
+ * Replaces defaultHighlightStyle to enable theming of code blocks
+ */
+export const codeHighlightStyle = HighlightStyle.define([
+    // Keywords
+    { tag: tags.keyword, color: 'var(--code-keyword)' },
+    { tag: tags.controlKeyword, color: 'var(--code-keyword)' },
+    { tag: tags.moduleKeyword, color: 'var(--code-keyword)' },
+    { tag: tags.operatorKeyword, color: 'var(--code-keyword)' },
+    { tag: tags.definitionKeyword, color: 'var(--code-keyword)' },
+
+    // Comments
+    { tag: tags.comment, color: 'var(--code-comment)', fontStyle: 'italic' },
+    { tag: tags.lineComment, color: 'var(--code-comment)', fontStyle: 'italic' },
+    { tag: tags.blockComment, color: 'var(--code-comment)', fontStyle: 'italic' },
+    { tag: tags.docComment, color: 'var(--code-comment)', fontStyle: 'italic' },
+
+    // Strings
+    { tag: tags.string, color: 'var(--code-string)' },
+    { tag: tags.special(tags.string), color: 'var(--code-string)' },
+    { tag: tags.character, color: 'var(--code-string)' },
+    { tag: tags.escape, color: 'var(--code-regex)' },
+
+    // Numbers
+    { tag: tags.number, color: 'var(--code-number)' },
+    { tag: tags.integer, color: 'var(--code-number)' },
+    { tag: tags.float, color: 'var(--code-number)' },
+
+    // Functions
+    { tag: tags.function(tags.variableName), color: 'var(--code-function)' },
+    { tag: tags.function(tags.propertyName), color: 'var(--code-function)' },
+
+    // Variables
+    { tag: tags.variableName, color: 'var(--code-variable)' },
+    { tag: tags.definition(tags.variableName), color: 'var(--code-variable)' },
+    { tag: tags.local(tags.variableName), color: 'var(--code-variable)' },
+
+    // Types
+    { tag: tags.typeName, color: 'var(--code-type)' },
+    { tag: tags.className, color: 'var(--code-type)' },
+    { tag: tags.namespace, color: 'var(--code-type)' },
+    { tag: tags.labelName, color: 'var(--code-type)' },
+    { tag: tags.macroName, color: 'var(--code-type)' },
+
+    // Properties
+    { tag: tags.propertyName, color: 'var(--code-property)' },
+    { tag: tags.attributeName, color: 'var(--code-property)' },
+    { tag: tags.definition(tags.propertyName), color: 'var(--code-property)' },
+
+    // Operators
+    { tag: tags.operator, color: 'var(--code-operator)' },
+    { tag: tags.compareOperator, color: 'var(--code-operator)' },
+    { tag: tags.arithmeticOperator, color: 'var(--code-operator)' },
+    { tag: tags.logicOperator, color: 'var(--code-operator)' },
+    { tag: tags.bitwiseOperator, color: 'var(--code-operator)' },
+    { tag: tags.updateOperator, color: 'var(--code-operator)' },
+    { tag: tags.derefOperator, color: 'var(--code-operator)' },
+
+    // Punctuation
+    { tag: tags.punctuation, color: 'var(--code-punctuation)' },
+    { tag: tags.bracket, color: 'var(--code-punctuation)' },
+    { tag: tags.paren, color: 'var(--code-punctuation)' },
+    { tag: tags.squareBracket, color: 'var(--code-punctuation)' },
+    { tag: tags.brace, color: 'var(--code-punctuation)' },
+    { tag: tags.angleBracket, color: 'var(--code-punctuation)' },
+    { tag: tags.separator, color: 'var(--code-punctuation)' },
+
+    // Regex
+    { tag: tags.regexp, color: 'var(--code-regex)' },
+
+    // Built-ins
+    { tag: tags.standard(tags.variableName), color: 'var(--code-builtin)' },
+    { tag: tags.atom, color: 'var(--code-builtin)' },
+    { tag: tags.bool, color: 'var(--code-builtin)' },
+    { tag: tags.null, color: 'var(--code-builtin)' },
+    { tag: tags.self, color: 'var(--code-builtin)' },
+
+    // Special: bold/italic for emphasis
+    { tag: tags.strong, fontWeight: 'bold' },
+    { tag: tags.emphasis, fontStyle: 'italic' },
+    { tag: tags.strikethrough, textDecoration: 'line-through' },
+
+    // Meta/annotations
+    { tag: tags.meta, color: 'var(--code-comment)' },
+    { tag: tags.annotation, color: 'var(--code-comment)' },
+    { tag: tags.processingInstruction, color: 'var(--code-comment)' },
+
+    // Invalid/error
+    { tag: tags.invalid, color: 'var(--code-keyword)', textDecoration: 'underline wavy' },
+
+    // Content (for markdown inside code)
+    { tag: tags.content, color: 'var(--code-variable)' },
+    { tag: tags.heading, fontWeight: 'bold' },
+    { tag: tags.url, color: 'var(--code-string)', textDecoration: 'underline' },
+    { tag: tags.link, color: 'var(--code-string)' },
+]);

@@ -45,6 +45,7 @@ export { createEditor, updateReadOnly } from './core/editor';
 export {
     createEditorTheme,
     createThemeStyles,
+    codeHighlightStyle,
     // Default theme values for reference
     LIGHT_COLORS,
     DARK_COLORS,
@@ -56,5 +57,6 @@ export {
     DARK_TABLES,
     LIGHT_CALLOUTS,
     DARK_CALLOUTS,
+    LIGHT_CODE,
+    DARK_CODE,
 } from './core/theme';
-
