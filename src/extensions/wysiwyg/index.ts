@@ -43,6 +43,8 @@ const formatDecorations: Record<string, Decoration> = {
     link: Decoration.mark({ class: 'cm-link' }),
     blockquote: Decoration.mark({ class: 'cm-blockquote' }),
     highlight: Decoration.mark({ class: 'cm-highlight' }),
+    footnoteRef: Decoration.mark({ class: 'cm-footnote-ref' }),
+    footnoteDef: Decoration.mark({ class: 'cm-footnote-def' }),
 };
 
 /**
@@ -122,6 +124,65 @@ class HorizontalRuleWidget extends WidgetType {
 
     eq(): boolean {
         return true;
+    }
+}
+
+/**
+ * Footnote reference widget for clickable superscript numbers
+ * Clicking scrolls to the footnote definition
+ */
+class FootnoteRefWidget extends WidgetType {
+    constructor(
+        private id: string,
+        private view: EditorView
+    ) {
+        super();
+    }
+
+    toDOM(): HTMLElement {
+        const span = document.createElement('span');
+        span.className = 'cm-footnote-ref';
+        span.textContent = this.id;
+        span.title = `Go to footnote ${this.id}`;
+
+        span.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.scrollToDefinition();
+        });
+
+        return span;
+    }
+
+    private scrollToDefinition() {
+        const doc = this.view.state.doc;
+        const defPattern = new RegExp(`^\\[\\^${this.escapeRegex(this.id)}\\]:`);
+
+        // Search for the definition line
+        for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
+            const line = doc.line(lineNum);
+            if (defPattern.test(line.text)) {
+                // Scroll to the definition and place cursor there
+                this.view.dispatch({
+                    selection: { anchor: line.from },
+                    scrollIntoView: true,
+                });
+                this.view.focus();
+                return;
+            }
+        }
+    }
+
+    private escapeRegex(str: string): string {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    eq(other: FootnoteRefWidget): boolean {
+        return this.id === other.id;
+    }
+
+    ignoreEvent(): boolean {
+        return false;
     }
 }
 
@@ -356,8 +417,67 @@ function buildDecorations(view: EditorView): DecorationSet {
         }
     }
 
+    // Handle footnotes - not in standard markdown parser
+    // Scan for footnote references [^id] and definitions [^id]: text
+    for (const { from, to } of view.visibleRanges) {
+        const lineStart = doc.lineAt(from).number;
+        const lineEnd = doc.lineAt(to).number;
+
+        for (let lineNum = lineStart; lineNum <= lineEnd; lineNum++) {
+            const line = doc.line(lineNum);
+            const isActiveLine = lineNum === cursorLine;
+
+            // Footnote definition at start of line: [^id]: definition text
+            const defMatch = line.text.match(/^\[\^([^\]]+)\]:\s*/);
+            if (defMatch) {
+                const defFrom = line.from;
+                const defTo = defFrom + defMatch[0].length;
+
+                // Style the definition marker
+                decos.push({
+                    from: defFrom,
+                    to: defTo,
+                    deco: formatDecorations.footnoteDef,
+                });
+                continue; // Skip checking for refs on definition lines
+            }
+
+            // Footnote references inline: [^id]
+            const refRegex = /\[\^([^\]]+)\]/g;
+            let refMatch;
+
+            while ((refMatch = refRegex.exec(line.text)) !== null) {
+                const matchFrom = line.from + refMatch.index;
+                const matchTo = matchFrom + refMatch[0].length;
+                const footnoteId = refMatch[1]; // The ID without brackets
+
+                if (!isActiveLine) {
+                    // Replace with clickable widget that scrolls to definition
+                    decos.push({
+                        from: matchFrom,
+                        to: matchTo,
+                        deco: Decoration.replace({
+                            widget: new FootnoteRefWidget(footnoteId, view),
+                        }),
+                    });
+                } else {
+                    // On active line, show the raw syntax with styling
+                    decos.push({
+                        from: matchFrom,
+                        to: matchTo,
+                        deco: formatDecorations.footnoteRef,
+                    });
+                }
+            }
+        }
+    }
+
     // Sort by position (required for RangeSetBuilder)
-    decos.sort((a, b) => a.from - b.from || a.to - b.to);
+    decos.sort((a, b) => {
+        if (a.from !== b.from) return a.from - b.from;
+        if (a.deco.startSide !== b.deco.startSide) return a.deco.startSide - b.deco.startSide;
+        return a.to - b.to;
+    });
 
     // Build the decoration set
     const builder = new RangeSetBuilder<Decoration>();

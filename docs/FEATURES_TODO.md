@@ -14,7 +14,7 @@ Obsidian-style features to implement in the editor.
 - [x] Consistent list styling
 - [x] Highlights (`==highlighted text==`)
 - [x] Horizontal rules (`---` or `***`)
-- [ ] Footnotes (`[^1]` and `[^1]: definition`)
+- [x] Footnotes (`[^1]` and `[^1]: definition`)
 
 ## Medium Priority
 

@@ -29,6 +29,7 @@ const lightThemeVars = {
     '--syntax-list-marker': '#0ea5e9',
     '--syntax-highlight-bg': '#fef08a',
     '--syntax-highlight-text': '#1a1a1a',
+    '--syntax-footnote': '#8b5cf6',
 
     // Obsidian extensions
     '--wikilink-color': '#7c3aed',
@@ -70,6 +71,7 @@ const darkThemeVars = {
     '--syntax-list-marker': '#38bdf8',
     '--syntax-highlight-bg': '#854d0e',
     '--syntax-highlight-text': '#fef9c3',
+    '--syntax-footnote': '#a78bfa',
 
     // Obsidian extensions
     '--wikilink-color': '#a78bfa',
@@ -176,6 +178,19 @@ const baseTheme = EditorView.baseTheme({
         color: 'var(--syntax-highlight-text)',
         padding: '1px 2px',
         borderRadius: '2px',
+    },
+
+    // Footnotes ([^1] and [^1]: definition)
+    '.cm-footnote-ref': {
+        color: 'var(--syntax-footnote)',
+        fontSize: '0.85em',
+        verticalAlign: 'super',
+        fontWeight: '600',
+        cursor: 'pointer',
+    },
+    '.cm-footnote-def': {
+        color: 'var(--syntax-footnote)',
+        fontWeight: '600',
     },
 
     // Links
