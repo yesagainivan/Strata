@@ -28,3 +28,7 @@ Obsidian-style features to implement in the editor.
 - [ ] Audio/video embeds (`![[video.mp4]]`)
 - [ ] PDF embeds (`![[document.pdf]]`)
 - [ ] Query blocks (dataview-style)
+
+## Community Contributions Welcome
+
+- [ ] Multi-line block math (`$$` on separate lines) - requires careful CM6 multi-line decoration handling

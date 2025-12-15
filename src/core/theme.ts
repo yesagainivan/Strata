@@ -105,8 +105,11 @@ const baseTheme = EditorView.baseTheme({
     },
     '.cm-content': {
         padding: '16px',
+        width: '100%',
         maxWidth: '800px',
         margin: '0 auto',
+        wordWrap: 'break-word',
+        whiteSpace: 'pre-wrap',
     },
     '.cm-focused': {
         outline: 'none',

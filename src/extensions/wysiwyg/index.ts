@@ -233,22 +233,6 @@ function collectCodeRanges(view: EditorView): ExcludedRange[] {
     return ranges;
 }
 
-/**
- * Check if a range overlaps with any excluded code range
- */
-function isInsideCodeRange(
-    matchFrom: number,
-    matchTo: number,
-    codeRanges: ExcludedRange[]
-): boolean {
-    for (const range of codeRanges) {
-        // Check if match overlaps with code range
-        if (matchFrom < range.to && matchTo > range.from) {
-            return true;
-        }
-    }
-    return false;
-}
 
 /**
  * Mask code sections in a line's text by replacing them with spaces.
@@ -535,18 +519,15 @@ function buildDecorations(view: EditorView): DecorationSet {
             }
 
             // Footnote references inline: [^id]
+            // Use masked text to avoid matching inside code sections
+            const maskedText = maskCodeSections(line.text, line.from, codeRanges);
             const refRegex = /\[\^([^\]]+)\]/g;
             let refMatch;
 
-            while ((refMatch = refRegex.exec(line.text)) !== null) {
+            while ((refMatch = refRegex.exec(maskedText)) !== null) {
                 const matchFrom = line.from + refMatch.index;
                 const matchTo = matchFrom + refMatch[0].length;
                 const footnoteId = refMatch[1]; // The ID without brackets
-
-                // Skip if inside code block or inline code
-                if (isInsideCodeRange(matchFrom, matchTo, codeRanges)) {
-                    continue;
-                }
 
                 if (!isActiveLine) {
                     // Replace with clickable widget that scrolls to definition

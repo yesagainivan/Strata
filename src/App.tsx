@@ -77,10 +77,7 @@ We support standard Obsidian callouts with custom styling:
 ### LaTeX Math
 Inline math: $e^{i\\pi} + 1 = 0$
 
-Block math:
-$$
-\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
-$$
+Block math: $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 ### Data Tables
 | Feature | Implementation | Status |

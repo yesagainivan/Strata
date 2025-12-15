@@ -52,17 +52,23 @@ body,
   background-color: var(--toolbar-bg);
   border-bottom: 1px solid var(--toolbar-border);
   flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
 }
 
 .toolbar h1 {
   font-size: 18px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .toolbar-group {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .toolbar button {
