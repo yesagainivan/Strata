@@ -15,6 +15,7 @@ import { calloutExtension } from '../extensions/callout';
 import { tagExtension } from '../extensions/tag';
 import { imageEmbedExtension } from '../extensions/imageEmbed';
 import { createEditorTheme } from './theme';
+import type { StrataTheme } from '../types/theme';
 
 /**
  * Configuration for creating an editor instance
@@ -24,8 +25,8 @@ export interface EditorConfig {
     doc?: string;
     /** Placeholder text */
     placeholder?: string;
-    /** Theme mode */
-    theme?: 'light' | 'dark';
+    /** Theme configuration: 'light', 'dark', or StrataTheme object */
+    theme?: 'light' | 'dark' | StrataTheme;
     /** Make editor read-only */
     readOnly?: boolean;
     /** Additional extensions */
@@ -86,7 +87,10 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
         // ...
 
         // Theming (in compartment for dynamic updates)
-        themeCompartment.of(createEditorTheme(theme)),
+        // Normalize theme to mode string for CodeMirror theme
+        themeCompartment.of(createEditorTheme(
+            typeof theme === 'object' ? (theme.mode || 'light') : theme
+        )),
 
         // Read-only state (in compartment for dynamic updates)
         readOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
@@ -121,9 +125,10 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
 /**
  * Update theme dynamically
  */
-export function updateTheme(view: EditorView, theme: 'light' | 'dark'): void {
+export function updateTheme(view: EditorView, theme: 'light' | 'dark' | StrataTheme): void {
+    const mode = typeof theme === 'object' ? (theme.mode || 'light') : theme;
     view.dispatch({
-        effects: themeCompartment.reconfigure(createEditorTheme(theme)),
+        effects: themeCompartment.reconfigure(createEditorTheme(mode)),
     });
 }
 

@@ -14,6 +14,15 @@ export type {
     WikilinkData,
     CalloutData,
     CalloutType,
+    // Theme types
+    StrataTheme,
+    ThemeProp,
+    StrataColors,
+    SyntaxColors,
+    ElementColors,
+    TableColors,
+    CalloutConfig,
+    CalloutColors,
 } from './types';
 
 // Extensions
@@ -34,4 +43,19 @@ export type { CustomExtensionConfig } from './api/extension';
 
 // Core utilities (for advanced users)
 export { createEditor, updateTheme, updateReadOnly } from './core/editor';
-export { createEditorTheme } from './core/theme';
+export {
+    createEditorTheme,
+    createThemeStyles,
+    // Default theme values for reference
+    LIGHT_COLORS,
+    DARK_COLORS,
+    LIGHT_SYNTAX,
+    DARK_SYNTAX,
+    LIGHT_ELEMENTS,
+    DARK_ELEMENTS,
+    LIGHT_TABLES,
+    DARK_TABLES,
+    LIGHT_CALLOUTS,
+    DARK_CALLOUTS,
+} from './core/theme';
+

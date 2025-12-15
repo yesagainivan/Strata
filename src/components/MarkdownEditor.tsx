@@ -9,10 +9,12 @@ import React, {
     useImperativeHandle,
     forwardRef,
     useCallback,
+    useMemo,
 } from 'react';
 import { EditorView } from '@codemirror/view';
 import { createEditor, updateTheme, updateReadOnly } from '../core/editor';
-import type { MarkdownEditorProps, MarkdownEditorHandle, WikilinkData } from '../types';
+import { createThemeStyles } from '../core/theme';
+import type { MarkdownEditorProps, MarkdownEditorHandle, WikilinkData, StrataTheme } from '../types';
 
 /**
  * Parse wikilink click data into WikilinkData structure
@@ -71,6 +73,15 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
         useEffect(() => {
             callbacksRef.current = { onChange, onWikilinkClick, onTagClick };
         });
+
+        // Compute CSS variables for custom theme styles
+        const themeStyles = useMemo(() => {
+            if (typeof theme === 'object') {
+                return createThemeStyles(theme);
+            }
+            // For string themes, use built-in defaults via CodeMirror
+            return createThemeStyles({ mode: theme as 'light' | 'dark' });
+        }, [theme]);
 
         // Handle wikilink clicks - reads from ref to always get latest callback
         const handleWikilinkClick = useCallback(
@@ -230,11 +241,15 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             []
         );
 
+        // Get theme mode for data attribute
+        const themeMode = typeof theme === 'object' ? (theme.mode || 'light') : theme;
+
         return (
             <div
                 ref={containerRef}
                 className={`markdown-editor ${className}`.trim()}
-                data-theme={theme}
+                data-theme={themeMode}
+                style={themeStyles as React.CSSProperties}
             />
         );
     }

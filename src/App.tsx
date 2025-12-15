@@ -1,179 +1,58 @@
 /**
- * Demo application for the Markdown Editor
+ * Demo application for Strata Editor
+ * Showcases the StrataTheme API with preset themes
  */
 
-import { useState, useRef } from 'react';
-import { MarkdownEditor, createExtension, mathExtension, tableExtension, EditorErrorBoundary } from './index';
+import { useState, useRef, useMemo } from 'react';
+import { MarkdownEditor, createExtension, mathExtension, tableExtension, EditorErrorBoundary, createThemeStyles } from './index';
 import type { MarkdownEditorHandle, WikilinkData } from './types';
+import { THEME_PRESETS, getThemePreset, formatThemeCode } from './demo/themes';
 import 'katex/dist/katex.min.css';
 import './App.css';
 
-// Comprehensive demo content showcasing all features
-const DEMO_CONTENT = `# Strata Editor
+// Demo content showcasing features
+const DEMO_CONTENT = `# Welcome to Strata
 
-A production-ready **CodeMirror 6** based markdown editor with Obsidian-style WYSIWYG editing. Experience how markdown syntax gracefully fades when you're not editing a line.
+A beautiful markdown editor with **live preview** and full theme customization.
 
-> [!info] Interactive Demo
-> This is a **live editor**! Click anywhere to edit. Try the ==highlight syntax== or **Cmd/Ctrl+Click** on [[wikilinks]] and #tags to see the click handlers in action.
+> [!tip] Try the Theme Selector
+> Use the dropdown in the toolbar to switch between preset themes. Click "Show Code" to see the StrataTheme configuration!
 
+## Features
 
-## Core Features
+- **Rich Formatting** — Bold, *italic*, ~~strikethrough~~, ==highlight==
+- **Wikilinks** — [[Link to notes]] with Cmd/Ctrl+Click
+- **Tags** — Organize with #tags and #nested/tags
+- **Callouts** — Info, warning, tip, and more
+- **Math** — Inline $E = mc^2$ and block equations
+- **Tables** — Full markdown table support
 
-### Rich Text Formatting
-
-Standard markdown with live preview—syntax hides when you move away:
-
-- **Bold text** — Use \`**text**\` or \`__text__\`
-- *Italic text* — Use \`*text*\` or \`_text_\`
-- ~~Strikethrough~~ — Use \`~~text~~\`
-- \`Inline code\` — Use backticks
-- ==Highlighted text== — Use \`==text==\`
-
-### Lists & Task Management
-
-**Unordered Lists**
-- First item with bullet
-  - Nested item
-    - Deeply nested
-
-**Ordered Lists**
-1. First step
-2. Second step
-   1. Sub-step A
-   2. Sub-step B
-3. Third step
-
-**Task Lists**
-- [ ] Unchecked task
-- [x] Completed task
-- [/] In-progress task (custom)
-
----
-
-## Obsidian-Style Features
-
-### Wikilinks
-
-Link to other notes using double brackets:
-
-- Basic link: [[Another Note]]
-- With alias: [[Another Note|Click here]]
-- With heading: [[Another Note#Section]]
-- Combined: [[Note#Heading|Display Text]]
-
-### Tags
-
-Organize your notes with hashtags:
-
-#feature #markdown/syntax #editor/codemirror
-
-### Callouts
-
-Four callout types with distinct styling:
+### Example Callouts
 
 > [!info] Information
-> Use for general notes and context. Supports **bold**, *italic*, and \`code\`.
-
-> [!tip] Tip
-> Share helpful advice or best practices here.
+> Standard info callout with theme-aware styling.
 
 > [!warning] Warning
-> Highlight potential issues or things to watch out for.
+> Callouts adapt to each theme's color palette.
 
-> [!danger] Danger
-> Critical warnings that need immediate attention.
-
-**Foldable Callouts**
-
-> [!tip]+ Expanded by Default
-> This callout starts expanded. Click the chevron to collapse.
-
-> [!info]- Collapsed by Default
-> This callout starts collapsed. Click to expand.
-
-### Footnotes
-
-Add references with footnotes[^1] that you can click to navigate. Multiple footnotes[^2] are supported.
-
----
-
-## Math & Technical Content
-
-### LaTeX Mathematics
-
-**Inline Math**: The famous equation $e^{i\\pi} + 1 = 0$ shows Euler's identity.
-
-**Block Math**:
-$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
+> [!success] Success
+> Everything is working as expected!
 
 ### Code Blocks
 
-Syntax-highlighted code with language support. Special syntax inside code is **not** rendered:
-
 \`\`\`typescript
-// Wikilinks and tags inside code won't be clickable
-const example = "[[Note]] and #tag stay as-is in code";
-const math = "$x^2$"; // Math won't render here
-const mention = "@username"; // Custom extensions also ignored
+const theme: StrataTheme = {
+  mode: 'dark',
+  colors: { background: '#1a1a2e' }
+};
 \`\`\`
 
-Same applies to inline code: \`[[link]]\`, \`#tag\`, \`$x+y$\`, and \`@mention\` stay as plain text.
-
-### Tables with Rich Content
-
-Tables support **markdown rendering** in cells—wikilinks, bold, math, and more:
-
-| Feature | Example | Inline Math |
-|:---------|---------|:-----------:|
-| **Wikilinks** | [[Another Note]] | $x^2 + y^2$ |
-| *Tags* | #markdown/syntax | $\\sum_{i=1}^n$ |
-| \`Code\` | \`inline-code\` | $e^{i\\pi}$ |
-| ==Highlight== | **Bold** *Italic* | ✅ |
-
-**Traditional Table:**
-
-| Feature | Description | Status |
-|:---------|-------------|:--------:|
-| WYSIWYG | Live preview editing | ✅ |
-| Wikilinks | \`[[note]]\` syntax | ✅ |
-| Callouts | \`> [!type]\` blocks | ✅ |
-| Math | KaTeX rendering | ✅ |
-| Tables | GFM + rich content | ✅ |
-| Highlights | \`==text==\` syntax | ✅ |
-| Footnotes | \`[^ref]\` syntax | ✅ |
-
 ---
 
-## Additional Elements
-
-### Horizontal Rules
-
-Use \`---\` or \`***\` to create dividers:
-
----
-
-### Image Embeds
-
-Embed images with Obsidian syntax. **Images are draggable!** Try dragging the image below:
-
-![[https://generative-placeholders.stefanbohacek.com/image?width=600&height=300&style=cellular-automata&cells=50|Generative Placeholder]]
-
-Syntax: \`![[image.png]]\` or \`![[image.png|alt text]]\`
-
-### Custom Extensions
-
-The editor supports custom extensions. Try typing \`@username\` to see the mention extension in action!
-
----
-
-## Footnote Definitions
-
-[^1]: This is a footnote definition. Click the superscript number in the text above to jump here.
-
-[^2]: Footnotes support **markdown formatting** and can contain multiple lines of content.
+Try editing this content to see the WYSIWYG features in action!
 `;
 
-// Custom @mention extension example
+// @mention extension example
 const mentionExtension = createExtension({
   name: 'mention',
   pattern: /@(\w+)/g,
@@ -185,8 +64,21 @@ const mentionExtension = createExtension({
 
 function App() {
   const [content, setContent] = useState(DEMO_CONTENT);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [activeThemeId, setActiveThemeId] = useState('moss');
+  const [showCode, setShowCode] = useState(false);
   const editorRef = useRef<MarkdownEditorHandle>(null);
+
+  const activePreset = useMemo(() => getThemePreset(activeThemeId), [activeThemeId]);
+  const themeCode = useMemo(() =>
+    activePreset ? formatThemeCode(activePreset.theme) : '',
+    [activePreset]
+  );
+
+  // Generate CSS variables for the entire app container
+  const themeStyles = useMemo(() =>
+    createThemeStyles(activePreset?.theme || { mode: 'light' }),
+    [activePreset]
+  );
 
   const handleWikilinkClick = (data: WikilinkData) => {
     alert(`Navigate to: ${data.target}${data.heading ? '#' + data.heading : ''}`);
@@ -194,10 +86,6 @@ function App() {
 
   const handleTagClick = (tag: string) => {
     alert(`Filter by tag: #${tag}`);
-  };
-
-  const toggleTheme = () => {
-    setTheme((t) => (t === 'light' ? 'dark' : 'light'));
   };
 
   const insertText = (text: string) => {
@@ -210,8 +98,11 @@ function App() {
     editorRef.current?.focus();
   };
 
+  // Determine if current theme is dark mode
+  const isDarkMode = activePreset?.theme.mode === 'dark';
+
   return (
-    <div className={`app ${theme}`}>
+    <div className={`app ${isDarkMode ? 'dark' : 'light'}`} style={themeStyles as React.CSSProperties}>
       <header className="toolbar">
         <div className="toolbar-left">
           <div className="app-title">
@@ -225,20 +116,53 @@ function App() {
             <button onClick={() => wrapSelection('**', '**')} title="Bold"><strong>B</strong></button>
             <button onClick={() => wrapSelection('*', '*')} title="Italic"><em>I</em></button>
             <button onClick={() => wrapSelection('==', '==')} title="Highlight"><span className="btn-highlight">H</span></button>
-            <button onClick={() => wrapSelection('`', '`')} title="Inline Code">{'</>'}</button>
+            <button onClick={() => wrapSelection('\`', '\`')} title="Inline Code">{'</>'}</button>
             <button onClick={() => wrapSelection('[[', ']]')} title="Wikilink">🔗</button>
           </div>
           <div className="button-group" role="group" aria-label="Insert blocks">
             <button onClick={() => insertText('> [!info] Title\n> Content')} title="Callout">📌</button>
             <button onClick={() => wrapSelection('$', '$')} title="Inline Math">∑</button>
             <button onClick={() => insertText('| A | B |\n|---|---|\n| 1 | 2 |')} title="Table">▦</button>
-            <button onClick={() => insertText('\n---\n')} title="Horizontal Rule">―</button>
           </div>
-          <button className="theme-toggle" onClick={toggleTheme} title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
-            {theme === 'light' ? '🌙' : '☀️'}
+
+          {/* Theme selector */}
+          <div className="theme-selector">
+            <label htmlFor="theme-select" className="sr-only">Theme</label>
+            <select
+              id="theme-select"
+              value={activeThemeId}
+              onChange={(e) => setActiveThemeId(e.target.value)}
+              title="Select theme"
+            >
+              {THEME_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            className={`code-toggle ${showCode ? 'active' : ''}`}
+            onClick={() => setShowCode(!showCode)}
+            title="Show theme code"
+          >
+            {'{ }'}
           </button>
         </div>
       </header>
+
+      {showCode && (
+        <div className="code-panel">
+          <div className="code-panel-header">
+            <span>StrataTheme Configuration</span>
+            <span className="theme-description">{activePreset?.description}</span>
+          </div>
+          <pre className="code-content">
+            <code>{themeCode}</code>
+          </pre>
+        </div>
+      )}
 
       <main className="editor-container">
         <EditorErrorBoundary>
@@ -246,7 +170,7 @@ function App() {
             ref={editorRef}
             value={content}
             onChange={setContent}
-            theme={theme}
+            theme={activePreset?.theme || { mode: 'light' }}
             placeholder="Start writing your note..."
             onWikilinkClick={handleWikilinkClick}
             onTagClick={handleTagClick}
@@ -259,7 +183,7 @@ function App() {
       <footer className="status-bar">
         <span>Characters: {content.length}</span>
         <span>Lines: {content.split('\n').length}</span>
-        <span>Try typing @username to see custom extensions!</span>
+        <span>Theme: {activePreset?.name} ({isDarkMode ? 'dark' : 'light'})</span>
       </footer>
     </div>
   );

@@ -5,6 +5,252 @@
 
 import { Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import type { StrataTheme, StrataColors, SyntaxColors, ElementColors, TableColors, CalloutConfig } from '../types/theme';
+
+// =============================================================================
+// DEFAULT THEME VALUES
+// =============================================================================
+
+/**
+ * Default light mode core colors
+ */
+export const LIGHT_COLORS: StrataColors = {
+    background: '#ffffff',
+    foreground: '#1a1a1a',
+    selection: '#b4d5fe',
+    cursor: '#000000',
+    lineHighlight: '#f8f9fa',
+    gutterBackground: '#f8f9fa',
+    gutterForeground: '#6c757d',
+};
+
+/**
+ * Default dark mode core colors
+ */
+export const DARK_COLORS: StrataColors = {
+    background: '#1a1a1a',
+    foreground: '#e5e7eb',
+    selection: '#3b4252',
+    cursor: '#ffffff',
+    lineHighlight: '#252525',
+    gutterBackground: '#252525',
+    gutterForeground: '#6b7280',
+};
+
+/**
+ * Default light mode syntax colors
+ */
+export const LIGHT_SYNTAX: SyntaxColors = {
+    heading: '#0f172a',
+    bold: '#1e293b',
+    italic: '#475569',
+    link: '#2563eb',
+    code: '#e11d48',
+    codeBackground: '#f1f5f9',
+    blockquote: '#64748b',
+    listMarker: '#0ea5e9',
+    highlightBackground: '#fef08a',
+    highlightText: '#1a1a1a',
+    footnote: '#8b5cf6',
+};
+
+/**
+ * Default dark mode syntax colors
+ */
+export const DARK_SYNTAX: SyntaxColors = {
+    heading: '#f8fafc',
+    bold: '#f1f5f9',
+    italic: '#cbd5e1',
+    link: '#60a5fa',
+    code: '#fb7185',
+    codeBackground: '#292524',
+    blockquote: '#94a3b8',
+    listMarker: '#38bdf8',
+    highlightBackground: '#854d0e',
+    highlightText: '#fef9c3',
+    footnote: '#a78bfa',
+};
+
+/**
+ * Default light mode element colors
+ */
+export const LIGHT_ELEMENTS: ElementColors = {
+    wikilink: '#7c3aed',
+    wikilinkHover: '#5b21b6',
+    tag: '#0891b2',
+    tagBackground: '#ecfeff',
+};
+
+/**
+ * Default dark mode element colors
+ */
+export const DARK_ELEMENTS: ElementColors = {
+    wikilink: '#a78bfa',
+    wikilinkHover: '#c4b5fd',
+    tag: '#22d3ee',
+    tagBackground: '#164e63',
+};
+
+/**
+ * Default light mode table colors
+ */
+export const LIGHT_TABLES: TableColors = {
+    border: '#e2e8f0',
+    headerBackground: '#f1f5f9',
+    headerForeground: '#1e293b',
+    rowAltBackground: '#f8fafc',
+    rowHover: '#e0f2fe',
+};
+
+/**
+ * Default dark mode table colors
+ */
+export const DARK_TABLES: TableColors = {
+    border: '#3f3f46',
+    headerBackground: '#27272a',
+    headerForeground: '#f4f4f5',
+    rowAltBackground: '#1f1f23',
+    rowHover: '#2e3440',
+};
+
+/**
+ * Default light mode callout colors
+ */
+export const LIGHT_CALLOUTS: CalloutConfig = {
+    info: { background: 'rgba(59, 130, 246, 0.12)', border: '#3b82f6', header: '#1e40af' },
+    warning: { background: 'rgba(245, 158, 11, 0.12)', border: '#f59e0b', header: '#92400e' },
+    danger: { background: 'rgba(239, 68, 68, 0.12)', border: '#ef4444', header: '#991b1b' },
+    success: { background: 'rgba(34, 197, 94, 0.12)', border: '#22c55e', header: '#166534' },
+    tip: { background: 'rgba(20, 184, 166, 0.12)', border: '#14b8a6', header: '#115e59' },
+    note: { background: 'rgba(99, 102, 241, 0.12)', border: '#6366f1', header: '#4338ca' },
+    question: { background: 'rgba(139, 92, 246, 0.12)', border: '#8b5cf6', header: '#6b21a8' },
+    quote: { background: 'rgba(100, 116, 139, 0.12)', border: '#64748b', header: '#475569' },
+    example: { background: 'rgba(14, 165, 233, 0.12)', border: '#0ea5e9', header: '#0369a1' },
+    bug: { background: 'rgba(239, 68, 68, 0.12)', border: '#ef4444', header: '#991b1b' },
+};
+
+/**
+ * Default dark mode callout colors
+ */
+export const DARK_CALLOUTS: CalloutConfig = {
+    info: { background: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6', header: '#60a5fa' },
+    warning: { background: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', header: '#fbbf24' },
+    danger: { background: 'rgba(239, 68, 68, 0.15)', border: '#ef4444', header: '#f87171' },
+    success: { background: 'rgba(34, 197, 94, 0.15)', border: '#22c55e', header: '#4ade80' },
+    tip: { background: 'rgba(20, 184, 166, 0.15)', border: '#14b8a6', header: '#2dd4bf' },
+    note: { background: 'rgba(99, 102, 241, 0.15)', border: '#6366f1', header: '#a5b4fc' },
+    question: { background: 'rgba(139, 92, 246, 0.15)', border: '#8b5cf6', header: '#c4b5fd' },
+    quote: { background: 'rgba(100, 116, 139, 0.15)', border: '#64748b', header: '#94a3b8' },
+    example: { background: 'rgba(14, 165, 233, 0.15)', border: '#0ea5e9', header: '#38bdf8' },
+    bug: { background: 'rgba(239, 68, 68, 0.15)', border: '#ef4444', header: '#f87171' },
+};
+
+// =============================================================================
+// CSS VARIABLE GENERATION
+// =============================================================================
+
+/**
+ * Create CSS variables from a StrataTheme configuration
+ * Returns an object ready to be spread into a style attribute
+ */
+export function createThemeStyles(theme: StrataTheme): Record<string, string> {
+    const isDark = theme.mode === 'dark';
+
+    // Merge defaults with user overrides using spread
+    const colors: StrataColors = { ...(isDark ? DARK_COLORS : LIGHT_COLORS), ...theme.colors };
+    const syntax: SyntaxColors = { ...(isDark ? DARK_SYNTAX : LIGHT_SYNTAX), ...theme.syntax };
+    const elements: ElementColors = { ...(isDark ? DARK_ELEMENTS : LIGHT_ELEMENTS), ...theme.elements };
+    const tables: TableColors = { ...(isDark ? DARK_TABLES : LIGHT_TABLES), ...theme.tables };
+
+    // For callouts, need to merge each type individually
+    const defaultCallouts = isDark ? DARK_CALLOUTS : LIGHT_CALLOUTS;
+    const userCallouts = theme.callouts || {};
+    const callouts: CalloutConfig = {
+        info: { ...defaultCallouts.info, ...userCallouts.info },
+        warning: { ...defaultCallouts.warning, ...userCallouts.warning },
+        danger: { ...defaultCallouts.danger, ...userCallouts.danger },
+        success: { ...defaultCallouts.success, ...userCallouts.success },
+        tip: { ...defaultCallouts.tip, ...userCallouts.tip },
+        note: { ...defaultCallouts.note, ...userCallouts.note },
+        question: { ...defaultCallouts.question, ...userCallouts.question },
+        quote: { ...defaultCallouts.quote, ...userCallouts.quote },
+        example: { ...defaultCallouts.example, ...userCallouts.example },
+        bug: { ...defaultCallouts.bug, ...userCallouts.bug },
+    };
+
+    return {
+        // Core colors
+        '--editor-bg': colors.background,
+        '--editor-text': colors.foreground,
+        '--editor-selection': colors.selection,
+        '--editor-cursor': colors.cursor,
+        '--editor-line-highlight': colors.lineHighlight,
+        '--editor-gutter-bg': colors.gutterBackground,
+        '--editor-gutter-text': colors.gutterForeground,
+
+        // Syntax
+        '--syntax-heading': syntax.heading,
+        '--syntax-bold': syntax.bold,
+        '--syntax-italic': syntax.italic,
+        '--syntax-link': syntax.link,
+        '--syntax-code': syntax.code,
+        '--syntax-code-bg': syntax.codeBackground,
+        '--syntax-blockquote': syntax.blockquote,
+        '--syntax-list-marker': syntax.listMarker,
+        '--syntax-highlight-bg': syntax.highlightBackground,
+        '--syntax-highlight-text': syntax.highlightText,
+        '--syntax-footnote': syntax.footnote,
+
+        // Elements
+        '--wikilink-color': elements.wikilink,
+        '--wikilink-hover': elements.wikilinkHover,
+        '--tag-color': elements.tag,
+        '--tag-bg': elements.tagBackground,
+
+        // Tables
+        '--table-border': tables.border,
+        '--table-header-bg': tables.headerBackground,
+        '--table-header-color': tables.headerForeground,
+        '--table-row-alt-bg': tables.rowAltBackground,
+        '--table-row-hover': tables.rowHover,
+
+        // Callouts
+        '--callout-info-bg': callouts.info.background,
+        '--callout-info-border': callouts.info.border,
+        '--callout-header-info': callouts.info.header,
+        '--callout-warning-bg': callouts.warning.background,
+        '--callout-warning-border': callouts.warning.border,
+        '--callout-header-warning': callouts.warning.header,
+        '--callout-danger-bg': callouts.danger.background,
+        '--callout-danger-border': callouts.danger.border,
+        '--callout-header-danger': callouts.danger.header,
+        '--callout-success-bg': callouts.success.background,
+        '--callout-success-border': callouts.success.border,
+        '--callout-header-success': callouts.success.header,
+        '--callout-tip-bg': callouts.tip.background,
+        '--callout-tip-border': callouts.tip.border,
+        '--callout-header-tip': callouts.tip.header,
+        '--callout-note-bg': callouts.note.background,
+        '--callout-note-border': callouts.note.border,
+        '--callout-header-note': callouts.note.header,
+        '--callout-question-bg': callouts.question.background,
+        '--callout-question-border': callouts.question.border,
+        '--callout-header-question': callouts.question.header,
+        '--callout-quote-bg': callouts.quote.background,
+        '--callout-quote-border': callouts.quote.border,
+        '--callout-header-quote': callouts.quote.header,
+        '--callout-example-bg': callouts.example.background,
+        '--callout-example-border': callouts.example.border,
+        '--callout-header-example': callouts.example.header,
+        '--callout-bug-bg': callouts.bug.background,
+        '--callout-bug-border': callouts.bug.border,
+        '--callout-header-bug': callouts.bug.header,
+    };
+}
+
+// =============================================================================
+// LEGACY SUPPORT - Internal CSS variable objects (kept for backward compat)
+// =============================================================================
 
 /**
  * Light theme CSS variables
@@ -371,18 +617,17 @@ const baseTheme = EditorView.baseTheme({
 
 /**
  * Create a complete theme extension for the given mode
+ * 
+ * Note: This extension sets up styles that USE CSS variables (var(--editor-bg)),
+ * but does NOT define the variable values. The variables should be set on the
+ * parent container via createThemeStyles() or inline styles.
  */
-export function createEditorTheme(mode: 'light' | 'dark'): Extension {
-    const vars = mode === 'dark' ? darkThemeVars : lightThemeVars;
-
-    // Create CSS variable theme
+export function createEditorTheme(_mode: 'light' | 'dark'): Extension {
+    // Theme that references CSS variables (values come from parent container)
     const varTheme = EditorView.theme({
         '&': {
             backgroundColor: 'var(--editor-bg)',
             color: 'var(--editor-text)',
-            ...Object.fromEntries(
-                Object.entries(vars).map(([key, value]) => [key, value])
-            ),
         },
         '&.cm-focused .cm-cursor': {
             borderLeftColor: 'var(--editor-cursor)',
@@ -400,10 +645,6 @@ export function createEditorTheme(mode: 'light' | 'dark'): Extension {
         },
     });
 
-    // Inject CSS variables
-    const cssVarsTheme = EditorView.theme({
-        '&': vars as Record<string, string>,
-    });
-
-    return [baseTheme, varTheme, cssVarsTheme];
+    return [baseTheme, varTheme];
 }
+

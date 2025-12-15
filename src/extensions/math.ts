@@ -256,14 +256,14 @@ const mathTheme = EditorView.baseTheme({
     },
     '.cm-math-source': {
         fontFamily: '"SF Mono", Monaco, "Cascadia Code", monospace',
-        color: '#7c3aed',
-        backgroundColor: '#f5f3ff',
+        color: 'var(--syntax-footnote, #7c3aed)',
+        backgroundColor: 'var(--syntax-code-bg, #f5f3ff)',
         padding: '1px 4px',
         borderRadius: '3px',
     },
     '.cm-math-error': {
-        color: '#dc2626',
-        backgroundColor: '#fef2f2',
+        color: 'var(--callout-header-danger, #dc2626)',
+        backgroundColor: 'var(--callout-danger-bg, #fef2f2)',
         padding: '2px 4px',
         borderRadius: '3px',
         fontFamily: 'monospace',
