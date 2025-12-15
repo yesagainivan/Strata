@@ -27,6 +27,8 @@ const lightThemeVars = {
     '--syntax-code-bg': '#f1f5f9',
     '--syntax-blockquote': '#64748b',
     '--syntax-list-marker': '#0ea5e9',
+    '--syntax-highlight-bg': '#fef08a',
+    '--syntax-highlight-text': '#1a1a1a',
 
     // Obsidian extensions
     '--wikilink-color': '#7c3aed',
@@ -66,6 +68,8 @@ const darkThemeVars = {
     '--syntax-code-bg': '#292524',
     '--syntax-blockquote': '#94a3b8',
     '--syntax-list-marker': '#38bdf8',
+    '--syntax-highlight-bg': '#854d0e',
+    '--syntax-highlight-text': '#fef9c3',
 
     // Obsidian extensions
     '--wikilink-color': '#a78bfa',
@@ -166,6 +170,14 @@ const baseTheme = EditorView.baseTheme({
         borderRadius: '3px',
     },
 
+    // Highlights (==text==)
+    '.cm-highlight': {
+        backgroundColor: 'var(--syntax-highlight-bg)',
+        color: 'var(--syntax-highlight-text)',
+        padding: '1px 2px',
+        borderRadius: '2px',
+    },
+
     // Links
     '.cm-link': {
         color: 'var(--syntax-link)',
@@ -181,6 +193,15 @@ const baseTheme = EditorView.baseTheme({
     },
 
     // Lists
+    '.cm-list-item': {
+        paddingLeft: '8px',
+    },
+    '.cm-list-item-unordered': {
+        // Additional styling for unordered list items if needed
+    },
+    '.cm-list-item-ordered': {
+        // Additional styling for ordered list items if needed
+    },
     '.cm-list-marker': {
         color: 'var(--syntax-list-marker)',
         fontWeight: '600',
@@ -188,7 +209,17 @@ const baseTheme = EditorView.baseTheme({
     '.cm-list-bullet': {
         color: 'var(--syntax-list-marker)',
         fontWeight: 'bold',
-        paddingRight: '4px',
+        display: 'inline-block',
+        width: '1.2em',
+        textAlign: 'center',
+    },
+    '.cm-list-number': {
+        color: 'var(--syntax-list-marker)',
+        fontWeight: '600',
+        display: 'inline-block',
+        minWidth: '1.5em',
+        textAlign: 'right',
+        paddingRight: '0.3em',
     },
     '.cm-list-marker-source': {
         color: 'var(--syntax-list-marker)',

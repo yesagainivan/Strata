@@ -42,6 +42,7 @@ const formatDecorations: Record<string, Decoration> = {
     inlineCode: Decoration.mark({ class: 'cm-code' }),
     link: Decoration.mark({ class: 'cm-link' }),
     blockquote: Decoration.mark({ class: 'cm-blockquote' }),
+    highlight: Decoration.mark({ class: 'cm-highlight' }),
 };
 
 /**
@@ -86,6 +87,26 @@ class ListBulletWidget extends WidgetType {
 
     eq(other: ListBulletWidget): boolean {
         return true;
+    }
+}
+
+/**
+ * Ordered list number widget for consistent styling
+ */
+class OrderedListWidget extends WidgetType {
+    constructor(private number: string) {
+        super();
+    }
+
+    toDOM(): HTMLElement {
+        const span = document.createElement('span');
+        span.className = 'cm-list-number';
+        span.textContent = this.number;
+        return span;
+    }
+
+    eq(other: OrderedListWidget): boolean {
+        return this.number === other.number;
     }
 }
 
@@ -208,9 +229,17 @@ function buildDecorations(view: EditorView): DecorationSet {
                 // List markers (bullets - * or - or +)
                 if (node.name === 'ListMark') {
                     const text = doc.sliceString(node.from, node.to);
+                    const line = doc.lineAt(node.from);
 
                     // Check if it's an unordered list marker
                     if (/^[-*+]$/.test(text)) {
+                        // Add line decoration for consistent indentation
+                        decos.push({
+                            from: line.from,
+                            to: line.from,
+                            deco: Decoration.line({ class: 'cm-list-item cm-list-item-unordered' }),
+                        });
+
                         if (!isActiveLine) {
                             decos.push({
                                 from: node.from,
@@ -220,7 +249,33 @@ function buildDecorations(view: EditorView): DecorationSet {
                                 }),
                             });
                         } else {
-                            // On active line, we can optionally style the marker color
+                            // On active line, style the marker color
+                            decos.push({
+                                from: node.from,
+                                to: node.to,
+                                deco: Decoration.mark({ class: 'cm-list-marker-source' }),
+                            });
+                        }
+                    }
+                    // Check if it's an ordered list marker (1. or 1))
+                    else if (/^\d+[.)]$/.test(text)) {
+                        // Add line decoration for consistent indentation
+                        decos.push({
+                            from: line.from,
+                            to: line.from,
+                            deco: Decoration.line({ class: 'cm-list-item cm-list-item-ordered' }),
+                        });
+
+                        if (!isActiveLine) {
+                            // Replace with styled widget for consistent appearance
+                            decos.push({
+                                from: node.from,
+                                to: node.to,
+                                deco: Decoration.replace({
+                                    widget: new OrderedListWidget(text),
+                                }),
+                            });
+                        } else {
                             decos.push({
                                 from: node.from,
                                 to: node.to,
@@ -231,6 +286,38 @@ function buildDecorations(view: EditorView): DecorationSet {
                 }
             },
         });
+
+        // Handle highlights (==text==) - not in standard markdown parser
+        // Scan visible text for highlight syntax
+        const lineStart = doc.lineAt(from).number;
+        const lineEnd = doc.lineAt(to).number;
+
+        for (let lineNum = lineStart; lineNum <= lineEnd; lineNum++) {
+            const line = doc.line(lineNum);
+            const isActiveLine = lineNum === cursorLine;
+            const highlightRegex = /==((?:[^=]|=[^=])+)==/g;
+            let match;
+
+            while ((match = highlightRegex.exec(line.text)) !== null) {
+                const matchFrom = line.from + match.index;
+                const matchTo = matchFrom + match[0].length;
+
+                // Apply highlight styling to the entire match including markers
+                decos.push({
+                    from: matchFrom,
+                    to: matchTo,
+                    deco: formatDecorations.highlight,
+                });
+
+                // Hide the == markers when not on active line
+                if (!isActiveLine) {
+                    // Hide opening ==
+                    decos.push({ from: matchFrom, to: matchFrom + 2, deco: hiddenMark });
+                    // Hide closing ==
+                    decos.push({ from: matchTo - 2, to: matchTo, deco: hiddenMark });
+                }
+            }
+        }
     }
 
     // Sort by position (required for RangeSetBuilder)
