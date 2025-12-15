@@ -284,7 +284,8 @@ const baseTheme = EditorView.baseTheme({
         width: '100%',
         height: '0',
         borderTop: '1px solid var(--editor-gutter-text)',
-        padding: '16px 0',
+        padding: '2px 0',
+        margin: '2px 0',
         opacity: '0.5',
         boxSizing: 'border-box',
         // Let clicks pass through to position cursor correctly

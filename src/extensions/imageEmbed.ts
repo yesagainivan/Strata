@@ -90,6 +90,8 @@ class ImageEmbedWidget extends WidgetType {
     }
 }
 
+import { syntaxTree } from '@codemirror/language';
+
 /**
  * Build decorations for image embeds
  */
@@ -103,6 +105,27 @@ function buildImageEmbedDecorations(view: EditorView): DecorationSet {
         const matches = parseImageEmbeds(text, from);
 
         for (const match of matches) {
+            // Check if match is inside a code block
+            const tree = syntaxTree(view.state);
+            let isCode = false;
+            tree.iterate({
+                from: match.from,
+                to: match.to,
+                enter: (node) => {
+                    if (
+                        node.name === 'InlineCode' ||
+                        node.name === 'FencedCode' ||
+                        node.name === 'CodeBlock' ||
+                        node.name === 'CodeText'
+                    ) {
+                        isCode = true;
+                        return false; // Stop iterating
+                    }
+                },
+            });
+
+            if (isCode) continue;
+
             const matchLine = doc.lineAt(match.from).number;
             const isActiveLine = matchLine === cursorLine;
 

@@ -15,7 +15,7 @@ A production-ready **CodeMirror 6** based markdown editor with Obsidian-style WY
 
 > [!info] Interactive Demo
 > This is a **live editor**! Click anywhere to edit. Try the ==highlight syntax== or **Cmd/Ctrl+Click** on [[wikilinks]] and #tags to see the click handlers in action.
----
+
 
 ## Core Features
 
@@ -150,6 +150,8 @@ Use \`---\` or \`***\` to create dividers:
 ### Image Embeds
 
 Embed images with Obsidian syntax:
+
+![[https://generative-placeholders.stefanbohacek.com/image?width=600&height=300&style=cellular-automata&cells=50|Generative Placeholder]]
 
 \`![[image.png]]\` or \`![[image.png|alt text]]\`
 
