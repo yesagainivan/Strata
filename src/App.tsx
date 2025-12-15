@@ -9,7 +9,7 @@ import 'katex/dist/katex.min.css';
 import './App.css';
 
 // Comprehensive demo content showcasing all features
-const DEMO_CONTENT = `# Modern Markdown Editor
+const DEMO_CONTENT = `# Strata Editor
 
 A production-ready **CodeMirror 6** based markdown editor with Obsidian-style WYSIWYG editing. Experience how markdown syntax gracefully fades when you're not editing a line.
 
@@ -208,10 +208,10 @@ function App() {
       <header className="toolbar">
         <div className="toolbar-left">
           <div className="app-title">
-            <span className="app-icon">✦</span>
-            <span>Modern Markdown Editor</span>
+            <span className="app-icon">⛰️</span>
+            <span>Strata Editor</span>
           </div>
-          <span className="app-subtitle">CodeMirror 6 • Obsidian-Style</span>
+          <span className="app-subtitle">Structured • Natural • Powerful</span>
         </div>
         <div className="toolbar-right">
           <div className="button-group" role="group" aria-label="Insert formatting">

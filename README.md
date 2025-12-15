@@ -1,4 +1,4 @@
-# Modern Markdown Editor
+# Strata Editor
 
 A production-ready **CodeMirror 6** based markdown editor with Obsidian-style WYSIWYG editing.
 
@@ -64,24 +64,13 @@ function App() {
 
 ## Foldable Callouts
 
-Callouts support Obsidian-style folding:
+Callouts support Obsidian-style folding (`+` for expanded, `-` for collapsed). See the [Callouts Documentation](docs/callouts.md) for full syntax details.
 
-```markdown
-> [!info] Always visible
-> This callout is not foldable
+## Contributing
 
-> [!tip]+ Expanded by default
-> Click the chevron to collapse
+We love contributions! Please read our [GitHub Guide](docs/github_guide.md) for details on how to set up the project, run CI checks, and submit Pull Requests.
 
-> [!warning]- Collapsed by default
-> Click the chevron to expand
-```
-
-| Syntax | Behavior |
-|--------|----------|
-| `> [!type]` | Not foldable |
-| `> [!type]+` | Foldable, expanded by default |
-| `> [!type]-` | Foldable, collapsed by default |
+[**View Live Demo**](https://yesagainivan.github.io/modern_markdown_editor/) (Auto-deployed via GitHub Actions)
 
 ## Creating Custom Extensions
 
