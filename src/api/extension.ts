@@ -12,6 +12,7 @@ import {
     ViewUpdate,
     WidgetType,
 } from '@codemirror/view';
+import { syntaxTree } from '@codemirror/language';
 
 /**
  * Configuration for a custom markdown extension
@@ -92,6 +93,27 @@ function buildCustomDecorations(
         const matches = findMatches(config.pattern, text, from);
 
         for (const { match, from: matchFrom, to: matchTo } of matches) {
+            // Check if match is inside a code block
+            const tree = syntaxTree(view.state);
+            let isCode = false;
+            tree.iterate({
+                from: matchFrom,
+                to: matchTo,
+                enter: (node) => {
+                    if (
+                        node.name === 'InlineCode' ||
+                        node.name === 'FencedCode' ||
+                        node.name === 'CodeBlock' ||
+                        node.name === 'CodeText'
+                    ) {
+                        isCode = true;
+                        return false;
+                    }
+                },
+            });
+
+            if (isCode) continue;
+
             const matchLine = doc.lineAt(matchFrom).number;
             const isActiveLine = matchLine === cursorLine;
 

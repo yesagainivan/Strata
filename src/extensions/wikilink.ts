@@ -12,6 +12,7 @@ import {
     ViewUpdate,
     WidgetType,
 } from '@codemirror/view';
+import { syntaxTree } from '@codemirror/language';
 
 /**
  * Configuration for the wikilink extension
@@ -125,6 +126,27 @@ function buildWikilinkDecorations(view: EditorView): DecorationSet {
         const matches = parseWikilinks(text, from);
 
         for (const match of matches) {
+            // Check if match is inside a code block
+            const tree = syntaxTree(view.state);
+            let isCode = false;
+            tree.iterate({
+                from: match.from,
+                to: match.to,
+                enter: (node) => {
+                    if (
+                        node.name === 'InlineCode' ||
+                        node.name === 'FencedCode' ||
+                        node.name === 'CodeBlock' ||
+                        node.name === 'CodeText'
+                    ) {
+                        isCode = true;
+                        return false;
+                    }
+                },
+            });
+
+            if (isCode) continue;
+
             const matchLine = doc.lineAt(match.from).number;
             const isActiveLine = matchLine === cursorLine;
 

@@ -11,6 +11,7 @@ import {
     ViewPlugin,
     ViewUpdate,
 } from '@codemirror/view';
+import { syntaxTree } from '@codemirror/language';
 
 /**
  * Configuration for the tag extension
@@ -81,6 +82,27 @@ function buildTagDecorations(view: EditorView): DecorationSet {
         const matches = parseTags(text, from);
 
         for (const match of matches) {
+            // Check if match is inside a code block
+            const tree = syntaxTree(view.state);
+            let isCode = false;
+            tree.iterate({
+                from: match.from,
+                to: match.to,
+                enter: (node) => {
+                    if (
+                        node.name === 'InlineCode' ||
+                        node.name === 'FencedCode' ||
+                        node.name === 'CodeBlock' ||
+                        node.name === 'CodeText'
+                    ) {
+                        isCode = true;
+                        return false;
+                    }
+                },
+            });
+
+            if (isCode) continue;
+
             builder.add(match.from, match.to, tagMark);
         }
     }
