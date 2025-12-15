@@ -57,7 +57,6 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             className = '',
             onWikilinkClick,
             onTagClick,
-            onFrontmatterChange,
         } = props;
 
         const containerRef = useRef<HTMLDivElement>(null);
@@ -66,9 +65,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
         const lastValueRef = useRef<string>(value ?? defaultValue);
 
         // Store latest callbacks in a ref to avoid stale closures
-        const callbacksRef = useRef({ onChange, onWikilinkClick, onTagClick, onFrontmatterChange });
+        const callbacksRef = useRef({ onChange, onWikilinkClick, onTagClick });
         useEffect(() => {
-            callbacksRef.current = { onChange, onWikilinkClick, onTagClick, onFrontmatterChange };
+            callbacksRef.current = { onChange, onWikilinkClick, onTagClick };
         });
 
         // Handle wikilink clicks - reads from ref to always get latest callback
@@ -97,29 +96,6 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             (newValue: string) => {
                 lastValueRef.current = newValue;
                 callbacksRef.current.onChange?.(newValue);
-
-                // Parse frontmatter if callback provided
-                if (callbacksRef.current.onFrontmatterChange) {
-                    const frontmatterMatch = newValue.match(/^---\n([\s\S]*?)\n---/);
-                    if (frontmatterMatch) {
-                        try {
-                            // Simple YAML parsing (for demonstration - use a proper YAML library in production)
-                            const frontmatter: Record<string, unknown> = {};
-                            const lines = frontmatterMatch[1].split('\n');
-                            for (const line of lines) {
-                                const colonIndex = line.indexOf(':');
-                                if (colonIndex !== -1) {
-                                    const key = line.slice(0, colonIndex).trim();
-                                    const value = line.slice(colonIndex + 1).trim();
-                                    frontmatter[key] = value;
-                                }
-                            }
-                            callbacksRef.current.onFrontmatterChange(frontmatter);
-                        } catch {
-                            // Ignore parsing errors
-                        }
-                    }
-                }
             },
             []
         );

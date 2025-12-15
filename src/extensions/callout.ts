@@ -451,25 +451,25 @@ const calloutTheme = EditorView.baseTheme({
         borderLeftColor: 'var(--callout-tip-border) !important',
     },
     '.cm-callout-note': {
-        backgroundColor: '#f0f4ff !important',
-        borderLeftColor: '#6366f1 !important',
+        backgroundColor: 'var(--callout-note-bg) !important',
+        borderLeftColor: 'var(--callout-note-border) !important',
     },
     '.cm-callout-question': {
-        backgroundColor: '#f5f3ff !important',
-        borderLeftColor: '#8b5cf6 !important',
+        backgroundColor: 'var(--callout-question-bg) !important',
+        borderLeftColor: 'var(--callout-question-border) !important',
     },
     '.cm-callout-quote': {
-        backgroundColor: '#f8fafc !important',
-        borderLeftColor: '#64748b !important',
+        backgroundColor: 'var(--callout-quote-bg) !important',
+        borderLeftColor: 'var(--callout-quote-border) !important',
         fontStyle: 'italic',
     },
     '.cm-callout-example': {
-        backgroundColor: '#f0f9ff !important',
-        borderLeftColor: '#0ea5e9 !important',
+        backgroundColor: 'var(--callout-example-bg) !important',
+        borderLeftColor: 'var(--callout-example-border) !important',
     },
     '.cm-callout-bug': {
-        backgroundColor: '#fef2f2 !important',
-        borderLeftColor: '#ef4444 !important',
+        backgroundColor: 'var(--callout-bug-bg) !important',
+        borderLeftColor: 'var(--callout-bug-border) !important',
     },
 });
 

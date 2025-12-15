@@ -46,6 +46,16 @@ const lightThemeVars = {
     '--callout-success-border': '#22c55e',
     '--callout-tip-bg': '#f0fdfa',
     '--callout-tip-border': '#14b8a6',
+    '--callout-note-bg': '#f0f4ff',
+    '--callout-note-border': '#6366f1',
+    '--callout-question-bg': '#f5f3ff',
+    '--callout-question-border': '#8b5cf6',
+    '--callout-quote-bg': '#f8fafc',
+    '--callout-quote-border': '#64748b',
+    '--callout-example-bg': '#f0f9ff',
+    '--callout-example-border': '#0ea5e9',
+    '--callout-bug-bg': '#fef2f2',
+    '--callout-bug-border': '#ef4444',
 };
 
 /**
@@ -88,6 +98,16 @@ const darkThemeVars = {
     '--callout-success-border': '#22c55e',
     '--callout-tip-bg': '#042f2e',
     '--callout-tip-border': '#14b8a6',
+    '--callout-note-bg': '#1e1b4b',
+    '--callout-note-border': '#6366f1',
+    '--callout-question-bg': '#2e1065',
+    '--callout-question-border': '#8b5cf6',
+    '--callout-quote-bg': '#1e293b',
+    '--callout-quote-border': '#64748b',
+    '--callout-example-bg': '#0c4a6e',
+    '--callout-example-border': '#0ea5e9',
+    '--callout-bug-bg': '#450a0a',
+    '--callout-bug-border': '#ef4444',
 };
 
 /**
@@ -296,37 +316,9 @@ const baseTheme = EditorView.baseTheme({
         cursor: 'pointer',
     },
 
-    // Callouts
-    '.cm-callout': {
-        borderRadius: '6px',
-        padding: '12px 16px',
-        marginTop: '8px',
-        marginBottom: '8px',
-        borderLeft: '4px solid',
-    },
-    '.cm-callout-info': {
-        backgroundColor: 'var(--callout-info-bg)',
-        borderLeftColor: 'var(--callout-info-border)',
-    },
-    '.cm-callout-warning': {
-        backgroundColor: 'var(--callout-warning-bg)',
-        borderLeftColor: 'var(--callout-warning-border)',
-    },
-    '.cm-callout-danger': {
-        backgroundColor: 'var(--callout-danger-bg)',
-        borderLeftColor: 'var(--callout-danger-border)',
-    },
-    '.cm-callout-success': {
-        backgroundColor: 'var(--callout-success-bg)',
-        borderLeftColor: 'var(--callout-success-border)',
-    },
-    '.cm-callout-tip': {
-        backgroundColor: 'var(--callout-tip-bg)',
-        borderLeftColor: 'var(--callout-tip-border)',
-    },
-    '.cm-callout-title': {
-        fontWeight: '600',
-    },
+    // Note: Callout styles are defined in the callout extension itself
+    // to keep the extension self-contained. CSS variables for callout colors
+    // are defined in lightThemeVars and darkThemeVars above.
 });
 
 /**

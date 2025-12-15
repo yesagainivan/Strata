@@ -26,8 +26,6 @@ export interface MarkdownEditorProps {
   onWikilinkClick?: (link: WikilinkData) => void;
   /** Callback when a tag is clicked */
   onTagClick?: (tag: string) => void;
-  /** Callback when frontmatter changes */
-  onFrontmatterChange?: (frontmatter: Record<string, unknown>) => void;
 }
 
 /**

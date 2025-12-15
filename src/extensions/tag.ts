@@ -66,10 +66,7 @@ const tagMark = Decoration.mark({
 /**
  * Build tag decorations
  */
-function buildTagDecorations(
-    view: EditorView,
-    onClick?: (tag: string) => void
-): DecorationSet {
+function buildTagDecorations(view: EditorView): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>();
     const doc = view.state.doc;
 
@@ -88,26 +85,24 @@ function buildTagDecorations(
 /**
  * View plugin for tag decorations
  */
-function createTagPlugin(config: TagConfig) {
-    return ViewPlugin.fromClass(
-        class {
-            decorations: DecorationSet;
+const tagPlugin = ViewPlugin.fromClass(
+    class {
+        decorations: DecorationSet;
 
-            constructor(view: EditorView) {
-                this.decorations = buildTagDecorations(view, config.onClick);
-            }
-
-            update(update: ViewUpdate) {
-                if (update.docChanged || update.viewportChanged || update.selectionSet) {
-                    this.decorations = buildTagDecorations(update.view, config.onClick);
-                }
-            }
-        },
-        {
-            decorations: (v) => v.decorations,
+        constructor(view: EditorView) {
+            this.decorations = buildTagDecorations(view);
         }
-    );
-}
+
+        update(update: ViewUpdate) {
+            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+                this.decorations = buildTagDecorations(update.view);
+            }
+        }
+    },
+    {
+        decorations: (v) => v.decorations,
+    }
+);
 
 /**
  * Event handler for tag clicks
@@ -147,7 +142,7 @@ function createTagClickHandler(onClick?: (tag: string) => void): Extension {
  */
 export function tagExtension(config: TagConfig = {}): Extension {
     return [
-        createTagPlugin(config),
+        tagPlugin,
         createTagClickHandler(config.onClick),
     ];
 }
