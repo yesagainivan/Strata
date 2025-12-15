@@ -57,6 +57,8 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             className = '',
             onWikilinkClick,
             onTagClick,
+            wikilinkInteraction,
+            tagInteraction,
         } = props;
 
         const containerRef = useRef<HTMLDivElement>(null);
@@ -72,10 +74,10 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
 
         // Handle wikilink clicks - reads from ref to always get latest callback
         const handleWikilinkClick = useCallback(
-            (target: string, alias?: string) => {
+            (target: string, alias: string | undefined, event: MouseEvent) => {
                 if (callbacksRef.current.onWikilinkClick) {
                     const data = parseWikilinkData(target, alias);
-                    callbacksRef.current.onWikilinkClick(data);
+                    callbacksRef.current.onWikilinkClick(data, event);
                 }
             },
             []
@@ -83,9 +85,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
 
         // Handle tag clicks - reads from ref to always get latest callback
         const handleTagClick = useCallback(
-            (tag: string) => {
+            (tag: string, event: MouseEvent) => {
                 if (callbacksRef.current.onTagClick) {
-                    callbacksRef.current.onTagClick(tag);
+                    callbacksRef.current.onTagClick(tag, event);
                 }
             },
             []
@@ -113,6 +115,8 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                 onChange: handleChange,
                 onWikilinkClick: handleWikilinkClick,
                 onTagClick: handleTagClick,
+                wikilinkInteraction,
+                tagInteraction,
             });
 
             editorRef.current = editor;
@@ -182,6 +186,28 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                         editorRef.current.dispatch({
                             changes: { from: pos, insert: text },
                         });
+                    }
+                },
+                wrapSelection: (before: string, after: string) => {
+                    if (editorRef.current) {
+                        const { from, to } = editorRef.current.state.selection.main;
+                        const hasSelection = from !== to;
+
+                        if (hasSelection) {
+                            // Wrap selected text
+                            const selectedText = editorRef.current.state.sliceDoc(from, to);
+                            editorRef.current.dispatch({
+                                changes: { from, to, insert: before + selectedText + after },
+                                selection: { anchor: from + before.length, head: to + before.length },
+                            });
+                        } else {
+                            // No selection: insert placeholder
+                            const placeholder = 'text';
+                            editorRef.current.dispatch({
+                                changes: { from, insert: before + placeholder + after },
+                                selection: { anchor: from + before.length, head: from + before.length + placeholder.length },
+                            });
+                        }
                     }
                 },
                 getEditorView: () => editorRef.current,

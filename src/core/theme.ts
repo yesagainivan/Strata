@@ -56,6 +56,13 @@ const lightThemeVars = {
     '--callout-example-border': '#0ea5e9',
     '--callout-bug-bg': '#fef2f2',
     '--callout-bug-border': '#ef4444',
+
+    // Tables
+    '--table-border': '#e2e8f0',
+    '--table-header-bg': '#f1f5f9',
+    '--table-header-color': '#1e293b',
+    '--table-row-alt-bg': '#f8fafc',
+    '--table-row-hover': '#e0f2fe',
 };
 
 /**
@@ -108,6 +115,13 @@ const darkThemeVars = {
     '--callout-example-border': '#0ea5e9',
     '--callout-bug-bg': '#450a0a',
     '--callout-bug-border': '#ef4444',
+
+    // Tables
+    '--table-border': '#3f3f46',
+    '--table-header-bg': '#27272a',
+    '--table-header-color': '#f4f4f5',
+    '--table-row-alt-bg': '#1f1f23',
+    '--table-row-hover': '#2e3440',
 };
 
 /**

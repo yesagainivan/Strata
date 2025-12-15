@@ -8,121 +8,162 @@ import type { MarkdownEditorHandle, WikilinkData } from './types';
 import 'katex/dist/katex.min.css';
 import './App.css';
 
-// Sample markdown content demonstrating all features
-const DEMO_CONTENT = `# Modern Markdown Editor Showcase
+// Comprehensive demo content showcasing all features
+const DEMO_CONTENT = `# Modern Markdown Editor
 
-Welcome to **Modern Markdown Editor**! This demo showcases the Obsidian-style WYSIWYG features handled by CodeMirror 6.
+A production-ready **CodeMirror 6** based markdown editor with Obsidian-style WYSIWYG editing. Experience how markdown syntax gracefully fades when you're not editing a line.
 
-This document is designed to test **footnote navigation**[^1]. Click that little number to jump to the bottom!
-
-## 1. Text Formatting & Highlights
-Standard markdown works as expected, but with a twist—syntax hides when you're not editing:
-- **Bold** and *Italic* are clean.
-- ~~Strikethrough~~ is supported.
-- \`Inline code\` looks like code.
-- **Highlights**: Use \`==\` to ==highlight important text== like this!
-
+> [!info] Interactive Demo
+> This is a **live editor**! Click anywhere to edit. Try the ==highlight syntax== or **Cmd/Ctrl+Click** on [[wikilinks]] and #tags to see the click handlers in action.
 ---
 
-## 2. Lists & Tasks
-We've implemented consistent styling for all list types:
+## Core Features
 
-### Unordered
-- Level 1 bullet
-  - Level 2 bullet
-    - Level 3 bullet
+### Rich Text Formatting
 
-### Ordered
+Standard markdown with live preview—syntax hides when you move away:
+
+- **Bold text** — Use \`**text**\` or \`__text__\`
+- *Italic text* — Use \`*text*\` or \`_text_\`
+- ~~Strikethrough~~ — Use \`~~text~~\`
+- \`Inline code\` — Use backticks
+- ==Highlighted text== — Use \`==text==\`
+
+### Lists & Task Management
+
+**Unordered Lists**
+- First item with bullet
+  - Nested item
+    - Deeply nested
+
+**Ordered Lists**
 1. First step
 2. Second step
    1. Sub-step A
    2. Sub-step B
 3. Third step
 
-### Task Lists
-- [ ] To Do: Implement block embeds
-- [x] Done: Consistent list styling
-- [x] Done: Highlights
-- [x] Done: Footnotes
-- [/] In Progress: Editor perfection
+**Task Lists**
+- [ ] Unchecked task
+- [x] Completed task
+- [/] In-progress task (custom)
 
 ---
 
-## 3. Obsidian Features
+## Obsidian-Style Features
+
+### Wikilinks
+
+Link to other notes using double brackets:
+
+- Basic link: [[Another Note]]
+- With alias: [[Another Note|Click here]]
+- With heading: [[Another Note#Section]]
+- Combined: [[Note#Heading|Display Text]]
+
+### Tags
+
+Organize your notes with hashtags:
+
+#feature #markdown/syntax #editor/codemirror
 
 ### Callouts
-We support standard Obsidian callouts with custom styling:
 
-> [!info] Did you know?
-> Callouts are perfect for highlighting side notes or warnings.
-> They support **bold** and *italics* too.
+Four callout types with distinct styling:
 
-> [!tip] Pro Tip
-> You can fold these callouts if you implement the folding extension!
+> [!info] Information
+> Use for general notes and context. Supports **bold**, *italic*, and \`code\`.
 
-> [!warning] Caution
-> Be careful with your regex patterns.
+> [!tip] Tip
+> Share helpful advice or best practices here.
 
-> [!danger] Critical Error
-> Something went wrong here.
+> [!warning] Warning
+> Highlight potential issues or things to watch out for.
 
-### Wikilinks & Tags
-- Link to other notes: [[Project Roadmap]] or [[Project Roadmap|with alias]].
-- Organize content with tags: #productivity #dev/obsidian #ideas.
+> [!danger] Danger
+> Critical warnings that need immediate attention.
 
----
+**Foldable Callouts**
 
-## 4. Math & Tables
+> [!tip]+ Expanded by Default
+> This callout starts expanded. Click the chevron to collapse.
 
-### LaTeX Math
-Inline math: $e^{i\\pi} + 1 = 0$
+> [!info]- Collapsed by Default
+> This callout starts collapsed. Click to expand.
 
-Block math: $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
+### Footnotes
 
-### Data Tables
-| Feature | Implementation | Status |
-| :--- | :---: | ---: |
-| WYSIWYG | CM6 Decorators | ✅ |
-| Math | KaTeX | ✅ |
-| Tables | GFM | ✅ |
-| Speed | Rust/WASM | 🚀 |
+Add references with footnotes[^1] that you can click to navigate. Multiple footnotes[^2] are supported.
 
 ---
 
-## 5. Code Blocks
+## Math & Technical Content
+
+### LaTeX Mathematics
+
+**Inline Math**: The famous equation $e^{i\\pi} + 1 = 0$ shows Euler's identity.
+
+**Block Math**:
+$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
+
+### Code Blocks
+
+Syntax-highlighted code with language support:
 
 \`\`\`typescript
-interface User {
-  id: number;
-  name: string;
-  role: 'admin' | 'user';
+interface MarkdownEditorProps {
+  value: string;
+  onChange: (content: string) => void;
+  theme: 'light' | 'dark';
 }
 
-function greet(user: User) {
-  console.log(\`Hello, \${user.name}!\`);
+function createEditor(props: MarkdownEditorProps) {
+  return new EditorView({
+    doc: props.value,
+    extensions: [markdown(), obsidianMode()]
+  });
 }
 \`\`\`
 
+### Tables
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| WYSIWYG | Live preview editing | ✅ |
+| Wikilinks | \`[[note]]\` syntax | ✅ |
+| Callouts | \`> [!type]\` blocks | ✅ |
+| Math | KaTeX rendering | ✅ |
+| Tables | GFM table support | ✅ |
+| Highlights | \`==text==\` syntax | ✅ |
+| Footnotes | \`[^ref]\` syntax | ✅ |
+
 ---
 
-## 6. Filler Section for Scrolling
-*(This section exists to ensure the document is long enough to demonstrate the scroll-to-footnote feature)*
+## Additional Elements
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+### Horizontal Rules
 
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.
-
-... (Keep scrolling) ...
+Use \`---\` or \`***\` to create dividers:
 
 ---
 
-## 7. Footnotes Area
+### Image Embeds
 
-Here is the definition for the footnote referenced at the top.
+Embed images with Obsidian syntax:
 
-[^1]: **Success!** You clicked the footnote reference and the editor scrolled you down here. The definition works with standard markdown syntax \`[^1]: ...\`.
+\`![[image.png]]\` or \`![[image.png|alt text]]\`
+
+### Custom Extensions
+
+The editor supports custom extensions. Try typing @username to see the mention extension in action!
+
+---
+
+## Footnote Definitions
+
+[^1]: This is a footnote definition. Click the superscript number in the text above to jump here.
+
+[^2]: Footnotes support **markdown formatting** and can contain multiple lines of content.
 `;
 
 // Custom @mention extension example
@@ -141,12 +182,10 @@ function App() {
   const editorRef = useRef<MarkdownEditorHandle>(null);
 
   const handleWikilinkClick = (data: WikilinkData) => {
-    console.log('Wikilink clicked:', data);
     alert(`Navigate to: ${data.target}${data.heading ? '#' + data.heading : ''}`);
   };
 
   const handleTagClick = (tag: string) => {
-    console.log('Tag clicked:', tag);
     alert(`Filter by tag: #${tag}`);
   };
 
@@ -159,26 +198,37 @@ function App() {
     editorRef.current?.focus();
   };
 
+  const wrapSelection = (before: string, after: string) => {
+    editorRef.current?.wrapSelection(before, after);
+    editorRef.current?.focus();
+  };
+
   return (
     <div className={`app ${theme}`}>
       <header className="toolbar">
-        <div className="toolbar-group">
-          <h1>📝 Markdown Editor</h1>
+        <div className="toolbar-left">
+          <div className="app-title">
+            <span className="app-icon">✦</span>
+            <span>Modern Markdown Editor</span>
+          </div>
+          <span className="app-subtitle">CodeMirror 6 • Obsidian-Style</span>
         </div>
-        <div className="toolbar-group">
-          <button onClick={() => insertText('**bold**')}>Bold</button>
-          <button onClick={() => insertText('*italic*')}>Italic</button>
-          <button onClick={() => insertText('==highlight==')}>Highlight</button>
-          <button onClick={() => insertText('[[link]]')}>Wikilink</button>
-          <button onClick={() => insertText('#tag')}>Tag</button>
-          <button onClick={() => insertText('> [!info] Title\n> Content')}>Callout</button>
-          <button onClick={() => insertText('$x^2$')}>Math</button>
-          <button onClick={() => insertText('| A | B |\n|---|---|\n| 1 | 2 |')}>Table</button>
-          <button onClick={() => insertText('\n---\n')}>HR</button>
-        </div>
-        <div className="toolbar-group">
-          <button onClick={toggleTheme}>
-            {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+        <div className="toolbar-right">
+          <div className="button-group" role="group" aria-label="Insert formatting">
+            <button onClick={() => wrapSelection('**', '**')} title="Bold"><strong>B</strong></button>
+            <button onClick={() => wrapSelection('*', '*')} title="Italic"><em>I</em></button>
+            <button onClick={() => wrapSelection('==', '==')} title="Highlight"><span className="btn-highlight">H</span></button>
+            <button onClick={() => wrapSelection('`', '`')} title="Inline Code">{'</>'}</button>
+            <button onClick={() => wrapSelection('[[', ']]')} title="Wikilink">🔗</button>
+          </div>
+          <div className="button-group" role="group" aria-label="Insert blocks">
+            <button onClick={() => insertText('> [!info] Title\n> Content')} title="Callout">📌</button>
+            <button onClick={() => wrapSelection('$', '$')} title="Inline Math">∑</button>
+            <button onClick={() => insertText('| A | B |\n|---|---|\n| 1 | 2 |')} title="Table">▦</button>
+            <button onClick={() => insertText('\n---\n')} title="Horizontal Rule">―</button>
+          </div>
+          <button className="theme-toggle" onClick={toggleTheme} title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+            {theme === 'light' ? '🌙' : '☀️'}
           </button>
         </div>
       </header>

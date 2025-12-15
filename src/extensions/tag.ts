@@ -17,7 +17,13 @@ import {
  */
 export interface TagConfig {
     /** Callback when a tag is clicked */
-    onClick?: (tag: string) => void;
+    onClick?: (tag: string, event: MouseEvent) => void;
+    /**
+     * Interaction mode for tags
+     * - 'modifier': Require Cmd/Ctrl + Click to trigger (default)
+     * - 'click': Trigger on simple Click (prevents editing cursor placement)
+     */
+    triggerOn?: 'click' | 'modifier';
 }
 
 /**
@@ -107,11 +113,14 @@ const tagPlugin = ViewPlugin.fromClass(
 /**
  * Event handler for tag clicks
  */
-function createTagClickHandler(onClick?: (tag: string) => void): Extension {
+function createTagClickHandler(
+    onClick?: (tag: string, event: MouseEvent) => void,
+    triggerOn: 'click' | 'modifier' = 'modifier'
+): Extension {
     if (!onClick) return [];
 
     return EditorView.domEventHandlers({
-        click(event, view) {
+        mousedown(event, view) {
             const target = event.target as HTMLElement;
             if (target.classList.contains('cm-tag') || target.closest('.cm-tag')) {
                 const tagElement = target.classList.contains('cm-tag')
@@ -126,9 +135,15 @@ function createTagClickHandler(onClick?: (tag: string) => void): Extension {
                 const matches = parseTags(text, line.from);
                 for (const match of matches) {
                     if (pos >= match.from && pos <= match.to) {
-                        onClick(match.tag);
-                        event.preventDefault();
-                        return true;
+                        const isModifier = event.metaKey || event.ctrlKey;
+                        const shouldTrigger = triggerOn === 'click' || (triggerOn === 'modifier' && isModifier);
+
+                        if (shouldTrigger) {
+                            event.preventDefault(); // Stop cursor move
+                            event.stopPropagation();
+                            onClick(match.tag, event);
+                            return true;
+                        }
                     }
                 }
             }
@@ -143,6 +158,6 @@ function createTagClickHandler(onClick?: (tag: string) => void): Extension {
 export function tagExtension(config: TagConfig = {}): Extension {
     return [
         tagPlugin,
-        createTagClickHandler(config.onClick),
+        createTagClickHandler(config.onClick, config.triggerOn),
     ];
 }

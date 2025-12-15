@@ -33,9 +33,13 @@ export interface EditorConfig {
     /** Callback when document changes */
     onChange?: (doc: string) => void;
     /** Callback when wikilink is clicked */
-    onWikilinkClick?: (target: string, alias?: string) => void;
+    onWikilinkClick?: (target: string, alias: string | undefined, event: MouseEvent) => void;
     /** Callback when tag is clicked */
-    onTagClick?: (tag: string) => void;
+    onTagClick?: (tag: string, event: MouseEvent) => void;
+    /** Interaction mode for wikilinks */
+    wikilinkInteraction?: 'click' | 'modifier';
+    /** Interaction mode for tags */
+    tagInteraction?: 'click' | 'modifier';
 }
 
 // Compartments for dynamic reconfiguration
@@ -55,6 +59,8 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
         onChange,
         onWikilinkClick,
         onTagClick,
+        wikilinkInteraction,
+        tagInteraction,
     } = config;
 
     // Build extension array
@@ -72,12 +78,12 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
 
         // WYSIWYG extensions (hidden marks, styled headings)
         wysiwygExtension(),
-
         // Obsidian-style extensions
-        wikilinkExtension({ onClick: onWikilinkClick }),
+        wikilinkExtension({ onClick: onWikilinkClick, triggerOn: wikilinkInteraction }),
         calloutExtension(),  // Note: Currently minimal (theme-only) due to cursor bug in ViewPlugin
-        tagExtension({ onClick: onTagClick }),
+        tagExtension({ onClick: onTagClick, triggerOn: tagInteraction }),
         imageEmbedExtension(),
+        // ...
 
         // Theming (in compartment for dynamic updates)
         themeCompartment.of(createEditorTheme(theme)),

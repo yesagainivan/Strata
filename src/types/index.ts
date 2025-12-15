@@ -23,9 +23,14 @@ export interface MarkdownEditorProps {
   /** CSS class name for the editor container */
   className?: string;
   /** Callback when a wikilink is clicked */
-  onWikilinkClick?: (link: WikilinkData) => void;
+  /** Callback when a wikilink is clicked */
+  onWikilinkClick?: (link: WikilinkData, event: MouseEvent) => void;
   /** Callback when a tag is clicked */
-  onTagClick?: (tag: string) => void;
+  onTagClick?: (tag: string, event: MouseEvent) => void;
+  /** Interaction mode for wikilinks (default: 'modifier') */
+  wikilinkInteraction?: 'click' | 'modifier';
+  /** Interaction mode for tags (default: 'modifier') */
+  tagInteraction?: 'click' | 'modifier';
 }
 
 /**
@@ -83,6 +88,8 @@ export interface MarkdownEditorHandle {
   focus: () => void;
   /** Insert text at cursor position */
   insertText: (text: string) => void;
+  /** Wrap selected text with before/after syntax, or insert if no selection */
+  wrapSelection: (before: string, after: string) => void;
   /** Get the underlying CodeMirror EditorView */
   getEditorView: () => unknown;
 }

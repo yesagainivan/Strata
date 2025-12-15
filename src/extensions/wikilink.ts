@@ -18,7 +18,13 @@ import {
  */
 export interface WikilinkConfig {
     /** Callback when a wikilink is clicked */
-    onClick?: (target: string, alias?: string) => void;
+    onClick?: (target: string, alias: string | undefined, event: MouseEvent) => void;
+    /**
+     * Interaction mode for wikilinks
+     * - 'modifier': Require Cmd/Ctrl + Click to trigger (default)
+     * - 'click': Trigger on simple Click (prevents editing cursor placement)
+     */
+    triggerOn?: 'click' | 'modifier';
 }
 
 /**
@@ -93,7 +99,10 @@ class WikilinkWidget extends WidgetType {
         );
     }
 
-    ignoreEvent(): boolean {
+    ignoreEvent(event: Event): boolean {
+        // We must return false to let the event bubble up to the editor's
+        // domEventHandlers. We'll handle the prevention of default behavior
+        // (cursor move) in the mousedown handler itself.
         return false;
     }
 }
@@ -161,21 +170,29 @@ const wikilinkPlugin = ViewPlugin.fromClass(
 );
 
 /**
- * Create event delegation handler for wikilink clicks
- * Uses closure to capture the onClick callback
+ * Event handler for wikilink clicks
  */
-function createWikilinkClickHandler(onClick?: (target: string, alias?: string) => void): Extension {
+function createWikilinkClickHandler(
+    onClick?: (target: string, alias: string | undefined, event: MouseEvent) => void,
+    triggerOn: 'click' | 'modifier' = 'modifier'
+): Extension {
     if (!onClick) return [];
 
     return EditorView.domEventHandlers({
-        click(event, _view) {
+        mousedown(event, _view) {
             const target = event.target as HTMLElement;
             const wikilink = target.closest('.cm-wikilink') as HTMLElement | null;
 
             if (wikilink && wikilink.dataset.wikilinkTarget) {
-                event.preventDefault();
-                onClick(wikilink.dataset.wikilinkTarget, wikilink.dataset.wikilinkAlias);
-                return true;
+                const isModifier = event.metaKey || event.ctrlKey;
+                const shouldTrigger = triggerOn === 'click' || (triggerOn === 'modifier' && isModifier);
+
+                if (shouldTrigger) {
+                    event.preventDefault(); // Stop cursor move / widget destruction
+                    event.stopPropagation();
+                    onClick(wikilink.dataset.wikilinkTarget, wikilink.dataset.wikilinkAlias, event);
+                    return true;
+                }
             }
             return false;
         }
@@ -196,5 +213,5 @@ const wikilinkTheme = EditorView.baseTheme({
  * Wikilink extension for Obsidian-style [[links]]
  */
 export function wikilinkExtension(config: WikilinkConfig = {}): Extension {
-    return [wikilinkPlugin, wikilinkTheme, createWikilinkClickHandler(config.onClick)];
+    return [wikilinkPlugin, wikilinkTheme, createWikilinkClickHandler(config.onClick, config.triggerOn)];
 }
