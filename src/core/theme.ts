@@ -36,25 +36,27 @@ const lightThemeVars = {
     '--wikilink-hover': '#5b21b6',
     '--tag-color': '#0891b2',
     '--tag-bg': '#ecfeff',
-    '--callout-info-bg': '#eff6ff',
+
+    // Callouts - using transparent backgrounds that work in both light and dark mode
+    '--callout-info-bg': 'rgba(59, 130, 246, 0.12)',
     '--callout-info-border': '#3b82f6',
-    '--callout-warning-bg': '#fffbeb',
+    '--callout-warning-bg': 'rgba(245, 158, 11, 0.12)',
     '--callout-warning-border': '#f59e0b',
-    '--callout-danger-bg': '#fef2f2',
+    '--callout-danger-bg': 'rgba(239, 68, 68, 0.12)',
     '--callout-danger-border': '#ef4444',
-    '--callout-success-bg': '#f0fdf4',
+    '--callout-success-bg': 'rgba(34, 197, 94, 0.12)',
     '--callout-success-border': '#22c55e',
-    '--callout-tip-bg': '#f0fdfa',
+    '--callout-tip-bg': 'rgba(20, 184, 166, 0.12)',
     '--callout-tip-border': '#14b8a6',
-    '--callout-note-bg': '#f0f4ff',
+    '--callout-note-bg': 'rgba(99, 102, 241, 0.12)',
     '--callout-note-border': '#6366f1',
-    '--callout-question-bg': '#f5f3ff',
+    '--callout-question-bg': 'rgba(139, 92, 246, 0.12)',
     '--callout-question-border': '#8b5cf6',
-    '--callout-quote-bg': '#f8fafc',
+    '--callout-quote-bg': 'rgba(100, 116, 139, 0.12)',
     '--callout-quote-border': '#64748b',
-    '--callout-example-bg': '#f0f9ff',
+    '--callout-example-bg': 'rgba(14, 165, 233, 0.12)',
     '--callout-example-border': '#0ea5e9',
-    '--callout-bug-bg': '#fef2f2',
+    '--callout-bug-bg': 'rgba(239, 68, 68, 0.12)',
     '--callout-bug-border': '#ef4444',
 
     // Tables
@@ -63,6 +65,18 @@ const lightThemeVars = {
     '--table-header-color': '#1e293b',
     '--table-row-alt-bg': '#f8fafc',
     '--table-row-hover': '#e0f2fe',
+
+    // Callout header colors (icon + title)
+    '--callout-header-info': '#1e40af',
+    '--callout-header-warning': '#92400e',
+    '--callout-header-danger': '#991b1b',
+    '--callout-header-success': '#166534',
+    '--callout-header-tip': '#115e59',
+    '--callout-header-note': '#4338ca',
+    '--callout-header-question': '#6b21a8',
+    '--callout-header-quote': '#475569',
+    '--callout-header-example': '#0369a1',
+    '--callout-header-bug': '#991b1b',
 };
 
 /**
@@ -95,25 +109,27 @@ const darkThemeVars = {
     '--wikilink-hover': '#c4b5fd',
     '--tag-color': '#22d3ee',
     '--tag-bg': '#164e63',
-    '--callout-info-bg': '#1e3a5f',
+
+    // Callouts - using same transparent backgrounds that work in both modes
+    '--callout-info-bg': 'rgba(59, 130, 246, 0.15)',
     '--callout-info-border': '#3b82f6',
-    '--callout-warning-bg': '#422006',
+    '--callout-warning-bg': 'rgba(245, 158, 11, 0.15)',
     '--callout-warning-border': '#f59e0b',
-    '--callout-danger-bg': '#450a0a',
+    '--callout-danger-bg': 'rgba(239, 68, 68, 0.15)',
     '--callout-danger-border': '#ef4444',
-    '--callout-success-bg': '#052e16',
+    '--callout-success-bg': 'rgba(34, 197, 94, 0.15)',
     '--callout-success-border': '#22c55e',
-    '--callout-tip-bg': '#042f2e',
+    '--callout-tip-bg': 'rgba(20, 184, 166, 0.15)',
     '--callout-tip-border': '#14b8a6',
-    '--callout-note-bg': '#1e1b4b',
+    '--callout-note-bg': 'rgba(99, 102, 241, 0.15)',
     '--callout-note-border': '#6366f1',
-    '--callout-question-bg': '#2e1065',
+    '--callout-question-bg': 'rgba(139, 92, 246, 0.15)',
     '--callout-question-border': '#8b5cf6',
-    '--callout-quote-bg': '#1e293b',
+    '--callout-quote-bg': 'rgba(100, 116, 139, 0.15)',
     '--callout-quote-border': '#64748b',
-    '--callout-example-bg': '#0c4a6e',
+    '--callout-example-bg': 'rgba(14, 165, 233, 0.15)',
     '--callout-example-border': '#0ea5e9',
-    '--callout-bug-bg': '#450a0a',
+    '--callout-bug-bg': 'rgba(239, 68, 68, 0.15)',
     '--callout-bug-border': '#ef4444',
 
     // Tables
@@ -122,6 +138,18 @@ const darkThemeVars = {
     '--table-header-color': '#f4f4f5',
     '--table-row-alt-bg': '#1f1f23',
     '--table-row-hover': '#2e3440',
+
+    // Callout header colors (icon + title) - brighter for dark mode
+    '--callout-header-info': '#60a5fa',
+    '--callout-header-warning': '#fbbf24',
+    '--callout-header-danger': '#f87171',
+    '--callout-header-success': '#4ade80',
+    '--callout-header-tip': '#2dd4bf',
+    '--callout-header-note': '#a5b4fc',
+    '--callout-header-question': '#c4b5fd',
+    '--callout-header-quote': '#94a3b8',
+    '--callout-header-example': '#38bdf8',
+    '--callout-header-bug': '#f87171',
 };
 
 /**
@@ -144,6 +172,7 @@ const baseTheme = EditorView.baseTheme({
         margin: '0 auto',
         wordWrap: 'break-word',
         whiteSpace: 'pre-wrap',
+        caretColor: 'var(--editor-cursor)',
     },
     '.cm-focused': {
         outline: 'none',
@@ -153,6 +182,7 @@ const baseTheme = EditorView.baseTheme({
     },
     '.cm-cursor': {
         borderLeftWidth: '2px',
+        borderLeftColor: 'var(--editor-cursor)',
     },
 
     // Placeholder

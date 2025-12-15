@@ -423,12 +423,16 @@ const calloutTheme = EditorView.baseTheme({
     '.cm-callout-title': {
         fontSize: '1em',
     },
-    '.cm-callout-header-info': { color: '#1e40af' },
-    '.cm-callout-header-warning': { color: '#92400e' },
-    '.cm-callout-header-danger': { color: '#991b1b' },
-    '.cm-callout-header-success': { color: '#166534' },
-    '.cm-callout-header-tip': { color: '#115e59' },
-    '.cm-callout-header-note': { color: '#4338ca' },
+    '.cm-callout-header-info': { color: 'var(--callout-header-info, #1e40af)' },
+    '.cm-callout-header-warning': { color: 'var(--callout-header-warning, #92400e)' },
+    '.cm-callout-header-danger': { color: 'var(--callout-header-danger, #991b1b)' },
+    '.cm-callout-header-success': { color: 'var(--callout-header-success, #166534)' },
+    '.cm-callout-header-tip': { color: 'var(--callout-header-tip, #115e59)' },
+    '.cm-callout-header-note': { color: 'var(--callout-header-note, #4338ca)' },
+    '.cm-callout-header-question': { color: 'var(--callout-header-question, #6b21a8)' },
+    '.cm-callout-header-quote': { color: 'var(--callout-header-quote, #475569)' },
+    '.cm-callout-header-example': { color: 'var(--callout-header-example, #0369a1)' },
+    '.cm-callout-header-bug': { color: 'var(--callout-header-bug, #991b1b)' },
     // Type colors
     '.cm-callout-info': {
         backgroundColor: 'var(--callout-info-bg) !important',
