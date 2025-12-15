@@ -59,10 +59,25 @@ class ImageEmbedWidget extends WidgetType {
 
         const img = document.createElement('img');
         img.src = this.match.target;
+        img.draggable = true;
+
         if (this.match.alt) {
             img.alt = this.match.alt;
             img.title = this.match.alt;
         }
+
+        // Enable native drag with the original markdown syntax
+        img.addEventListener('dragstart', (e) => {
+            if (e.dataTransfer) {
+                e.dataTransfer.setData('text/plain', this.match.full);
+                e.dataTransfer.effectAllowed = 'copyMove';
+            }
+            container.classList.add('dragging');
+        });
+
+        img.addEventListener('dragend', () => {
+            container.classList.remove('dragging');
+        });
 
         // Add error handling for broken images
         img.onerror = () => {
@@ -85,8 +100,16 @@ class ImageEmbedWidget extends WidgetType {
         );
     }
 
-    ignoreEvent(): boolean {
-        return false;
+    ignoreEvent(event: Event): boolean {
+        // Allow drag events and mousedown to be handled by the image directly
+        // This prevents CodeMirror from intercepting and breaking native drag behavior
+        const type = event.type;
+        return type === 'mousedown' ||
+            type === 'dragstart' ||
+            type === 'drag' ||
+            type === 'dragend' ||
+            type === 'dragover' ||
+            type === 'drop';
     }
 }
 
@@ -185,7 +208,15 @@ const imageEmbedTheme = EditorView.baseTheme({
         maxHeight: '300px', // Limit height to avoid taking up too much space
         borderRadius: '4px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        cursor: 'pointer',
+        cursor: 'grab',
+        transition: 'opacity 0.15s ease, transform 0.15s ease',
+    },
+    '.cm-image-embed img:active': {
+        cursor: 'grabbing',
+    },
+    '.cm-image-embed.dragging img': {
+        opacity: '0.5',
+        transform: 'scale(0.98)',
     },
     '.cm-image-error-text': {
         color: 'var(--error-color, #ff4d4f)',
