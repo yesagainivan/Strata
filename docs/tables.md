@@ -25,7 +25,7 @@ Standard GFM table syntax:
 
 ```markdown
 | Header 1 | Header 2 | Header 3 |
-|----------|:--------:|---------:|
+|----------|:--------:|----------|
 | Left     | Center   | Right    |
 | Data     | Data     | Data     |
 ```
@@ -37,6 +37,37 @@ Standard GFM table syntax:
 | `---` or `:---` | Left |
 | `:---:` | Center |
 | `---:` | Right |
+
+## Rich Content in Cells
+
+Tables support **markdown rendering** inside cells. The following features work:
+
+- **Wikilinks**: `[[Note]]`, `[[Note|Alias]]`
+- **Tags**: `#tag`, `#nested/tag`
+- **Formatting**: `**bold**`, `*italic*`, `~~strikethrough~~`, `==highlight==`
+- **Inline code**: `` `code` ``
+- **Math**: `$x^2 + y^2$`
+
+### Example
+
+```markdown
+| Feature | Example | Math |
+|---------|---------|------|
+| Wikilinks | [[Another Note]] | $e^{i\pi}$ |
+| Tags | #markdown | $\sum_{i=1}^n$ |
+| Formatting | **Bold** *Italic* | ✅ |
+```
+
+Renders as:
+
+| Feature | Example | Math |
+|---------|---------|------|
+| Wikilinks | [[Another Note]] | $e^{i\pi}$ |
+| Tags | #markdown | $\sum_{i=1}^n$ |
+| Formatting | **Bold** *Italic* | ✅ |
+
+> [!tip] Code Block Detection
+> Special syntax inside inline code (`` `[[link]]` ``) or fenced code blocks is **not** rendered. It displays as plain text.
 
 ## Styling
 
@@ -60,5 +91,6 @@ CSS variables for customization:
 The table extension:
 1. Detects tables using a regex pattern
 2. Renders an HTML `<table>` widget when cursor is outside
-3. Hides raw markdown lines using `Decoration.line()` + CSS `visibility: hidden`
-4. Shows raw markdown when cursor enters the table for editing
+3. Parses cell content to render markdown (wikilinks, formatting, math, etc.)
+4. Hides raw markdown lines using `Decoration.line()` + CSS `visibility: hidden`
+5. Shows raw markdown when cursor enters the table for editing

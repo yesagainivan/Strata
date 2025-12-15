@@ -108,24 +108,29 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
 
 ### Code Blocks
 
-Syntax-highlighted code with language support:
+Syntax-highlighted code with language support. Special syntax inside code is **not** rendered:
 
 \`\`\`typescript
-interface MarkdownEditorProps {
-  value: string;
-  onChange: (content: string) => void;
-  theme: 'light' | 'dark';
-}
-
-function createEditor(props: MarkdownEditorProps) {
-  return new EditorView({
-    doc: props.value,
-    extensions: [markdown(), obsidianMode()]
-  });
-}
+// Wikilinks and tags inside code won't be clickable
+const example = "[[Note]] and #tag stay as-is in code";
+const math = "$x^2$"; // Math won't render here
+const mention = "@username"; // Custom extensions also ignored
 \`\`\`
 
-### Tables
+Same applies to inline code: \`[[link]]\`, \`#tag\`, \`$x+y$\`, and \`@mention\` stay as plain text.
+
+### Tables with Rich Content
+
+Tables support **markdown rendering** in cells—wikilinks, bold, math, and more:
+
+| Feature | Example | Inline Math |
+|:---------|---------|:-----------:|
+| **Wikilinks** | [[Another Note]] | $x^2 + y^2$ |
+| *Tags* | #markdown/syntax | $\\sum_{i=1}^n$ |
+| \`Code\` | \`inline-code\` | $e^{i\\pi}$ |
+| ==Highlight== | **Bold** *Italic* | ✅ |
+
+**Traditional Table:**
 
 | Feature | Description | Status |
 |:---------|-------------|:--------:|
@@ -133,7 +138,7 @@ function createEditor(props: MarkdownEditorProps) {
 | Wikilinks | \`[[note]]\` syntax | ✅ |
 | Callouts | \`> [!type]\` blocks | ✅ |
 | Math | KaTeX rendering | ✅ |
-| Tables | GFM table support | ✅ |
+| Tables | GFM + rich content | ✅ |
 | Highlights | \`==text==\` syntax | ✅ |
 | Footnotes | \`[^ref]\` syntax | ✅ |
 
@@ -149,15 +154,15 @@ Use \`---\` or \`***\` to create dividers:
 
 ### Image Embeds
 
-Embed images with Obsidian syntax:
+Embed images with Obsidian syntax. **Images are draggable!** Try dragging the image below:
 
 ![[https://generative-placeholders.stefanbohacek.com/image?width=600&height=300&style=cellular-automata&cells=50|Generative Placeholder]]
 
-\`![[image.png]]\` or \`![[image.png|alt text]]\`
+Syntax: \`![[image.png]]\` or \`![[image.png|alt text]]\`
 
 ### Custom Extensions
 
-The editor supports custom extensions. Try typing @username to see the mention extension in action!
+The editor supports custom extensions. Try typing \`@username\` to see the mention extension in action!
 
 ---
 

@@ -8,11 +8,12 @@ A production-ready **CodeMirror 6** based markdown editor with Obsidian-style WY
 - 🔗 **Wikilinks** - `[[note]]`, `[[note|alias]]`, `[[note#heading]]`
 - 📌 **Callouts** - `> [!info]`, `> [!warning]`, etc. with foldable support
 - 🏷️ **Tags** - `#tag` and `#nested/tag` with click handlers
-- 🖼️ **Images** - `![[image.png]]` embedding
+- 🖼️ **Images** - `![[image.png]]` embedding with drag support
 - 🦶 **Footnotes** - `[^1]` reference support
 - 🔦 **Highlights** - `==text==` highlighting
-- 📐 **Tables** - GFM tables (via extension)
+- 📐 **Tables** - GFM tables with rich content rendering (wikilinks, math, formatting)
 - 🧮 **Math** - LaTeX rendering (via extension)
+- 🧠 **Smart Detection** - Special syntax doesn't render inside code blocks
 - 🌗 **Theming** - Light/dark mode with CSS variables
 - 🔌 **Extensible** - Simple API for custom syntax extensions
 - 🛡️ **Error Boundary** - Graceful error handling for production
