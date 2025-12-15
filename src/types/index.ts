@@ -4,7 +4,7 @@ import { Extension } from '@codemirror/state';
 
 // Re-export theme types
 export * from './theme';
-export type { StrataTheme, ThemeProp, StrataColors, SyntaxColors, ElementColors, TableColors, CalloutConfig, CalloutColors } from './theme';
+export type { StrataTheme, StrataColors, SyntaxColors, ElementColors, TableColors, CalloutConfig, CalloutColors } from './theme';
 
 /**
  * Configuration options for the MarkdownEditor component
@@ -18,19 +18,12 @@ export interface MarkdownEditorProps {
   onChange?: (value: string) => void;
   /** Additional CodeMirror 6 extensions */
   extensions?: Extension[];
-  /** 
-   * Theme configuration. Accepts:
-   * - 'light' | 'dark' for built-in presets
-   * - StrataTheme object for full customization
-   */
-  theme?: 'light' | 'dark' | import('./theme').StrataTheme;
   /** Placeholder text when editor is empty */
   placeholder?: string;
   /** Make editor read-only */
   readOnly?: boolean;
   /** CSS class name for the editor container */
   className?: string;
-  /** Callback when a wikilink is clicked */
   /** Callback when a wikilink is clicked */
   onWikilinkClick?: (link: WikilinkData, event: MouseEvent) => void;
   /** Callback when a tag is clicked */

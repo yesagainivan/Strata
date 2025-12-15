@@ -155,8 +155,3 @@ export interface StrataTheme {
     /** Table styling */
     tables?: Partial<TableColors>;
 }
-
-/**
- * Theme prop type - accepts string shorthand or full config
- */
-export type ThemeProp = 'light' | 'dark' | StrataTheme;

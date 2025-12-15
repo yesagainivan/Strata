@@ -170,7 +170,6 @@ function App() {
             ref={editorRef}
             value={content}
             onChange={setContent}
-            theme={activePreset?.theme || { mode: 'light' }}
             placeholder="Start writing your note..."
             onWikilinkClick={handleWikilinkClick}
             onTagClick={handleTagClick}

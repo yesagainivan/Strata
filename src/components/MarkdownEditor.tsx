@@ -9,12 +9,10 @@ import React, {
     useImperativeHandle,
     forwardRef,
     useCallback,
-    useMemo,
 } from 'react';
 import { EditorView } from '@codemirror/view';
-import { createEditor, updateTheme, updateReadOnly } from '../core/editor';
-import { createThemeStyles } from '../core/theme';
-import type { MarkdownEditorProps, MarkdownEditorHandle, WikilinkData, StrataTheme } from '../types';
+import { createEditor, updateReadOnly } from '../core/editor';
+import type { MarkdownEditorProps, MarkdownEditorHandle, WikilinkData } from '../types';
 
 /**
  * Parse wikilink click data into WikilinkData structure
@@ -53,7 +51,6 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             defaultValue = '',
             onChange,
             extensions = [],
-            theme = 'light',
             placeholder = 'Start writing...',
             readOnly = false,
             className = '',
@@ -74,14 +71,6 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             callbacksRef.current = { onChange, onWikilinkClick, onTagClick };
         });
 
-        // Compute CSS variables for custom theme styles
-        const themeStyles = useMemo(() => {
-            if (typeof theme === 'object') {
-                return createThemeStyles(theme);
-            }
-            // For string themes, use built-in defaults via CodeMirror
-            return createThemeStyles({ mode: theme as 'light' | 'dark' });
-        }, [theme]);
 
         // Handle wikilink clicks - reads from ref to always get latest callback
         const handleWikilinkClick = useCallback(
@@ -120,7 +109,6 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             const editor = createEditor(containerRef.current, {
                 doc: value ?? defaultValue,
                 placeholder,
-                theme,
                 readOnly,
                 extensions,
                 onChange: handleChange,
@@ -155,13 +143,6 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                 lastValueRef.current = value;
             }
         }, [value, isControlled]);
-
-        // Update theme when it changes
-        useEffect(() => {
-            if (editorRef.current) {
-                updateTheme(editorRef.current, theme);
-            }
-        }, [theme]);
 
         // Update read-only state when it changes
         useEffect(() => {
@@ -241,15 +222,10 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             []
         );
 
-        // Get theme mode for data attribute
-        const themeMode = typeof theme === 'object' ? (theme.mode || 'light') : theme;
-
         return (
             <div
                 ref={containerRef}
                 className={`markdown-editor ${className}`.trim()}
-                data-theme={themeMode}
-                style={themeStyles as React.CSSProperties}
             />
         );
     }

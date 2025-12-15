@@ -15,7 +15,6 @@ import { calloutExtension } from '../extensions/callout';
 import { tagExtension } from '../extensions/tag';
 import { imageEmbedExtension } from '../extensions/imageEmbed';
 import { createEditorTheme } from './theme';
-import type { StrataTheme } from '../types/theme';
 
 /**
  * Configuration for creating an editor instance
@@ -25,8 +24,6 @@ export interface EditorConfig {
     doc?: string;
     /** Placeholder text */
     placeholder?: string;
-    /** Theme configuration: 'light', 'dark', or StrataTheme object */
-    theme?: 'light' | 'dark' | StrataTheme;
     /** Make editor read-only */
     readOnly?: boolean;
     /** Additional extensions */
@@ -43,8 +40,7 @@ export interface EditorConfig {
     tagInteraction?: 'click' | 'modifier';
 }
 
-// Compartments for dynamic reconfiguration
-export const themeCompartment = new Compartment();
+// Compartment for dynamic reconfiguration
 export const readOnlyCompartment = new Compartment();
 
 /**
@@ -54,7 +50,6 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
     const {
         doc = '',
         placeholder = '',
-        theme = 'light',
         readOnly = false,
         extensions = [],
         onChange,
@@ -86,11 +81,8 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
         imageEmbedExtension(),
         // ...
 
-        // Theming (in compartment for dynamic updates)
-        // Normalize theme to mode string for CodeMirror theme
-        themeCompartment.of(createEditorTheme(
-            typeof theme === 'object' ? (theme.mode || 'light') : theme
-        )),
+        // Theming (references CSS variables from parent container)
+        createEditorTheme(),
 
         // Read-only state (in compartment for dynamic updates)
         readOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
@@ -122,15 +114,6 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
     });
 }
 
-/**
- * Update theme dynamically
- */
-export function updateTheme(view: EditorView, theme: 'light' | 'dark' | StrataTheme): void {
-    const mode = typeof theme === 'object' ? (theme.mode || 'light') : theme;
-    view.dispatch({
-        effects: themeCompartment.reconfigure(createEditorTheme(mode)),
-    });
-}
 
 /**
  * Update read-only state dynamically
