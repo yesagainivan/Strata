@@ -70,7 +70,7 @@ Callouts support Obsidian-style folding (`+` for expanded, `-` for collapsed). S
 
 We love contributions! Please read our [GitHub Guide](docs/github_guide.md) for details on how to set up the project, run CI checks, and submit Pull Requests.
 
-[**View Live Demo**](https://yesagainivan.github.io/modern_markdown_editor/) (Auto-deployed via GitHub Actions)
+[**View Live Demo**](https://yesagainivan.github.io/Strata/) (Auto-deployed via GitHub Actions)
 
 ## Creating Custom Extensions
 
