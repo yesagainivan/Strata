@@ -168,3 +168,35 @@ For host apps with existing CSS theming, you can also override CSS variables dir
 }
 ```
 
+## Typography
+
+Customize fonts, sizes, and heading styles via CSS variables:
+
+```css
+.markdown-editor {
+  /* Base typography */
+  --editor-font-family: 'Inter', sans-serif;
+  --editor-font-size: 16px;
+  --editor-line-height: 1.6;
+  --editor-content-padding: 16px;
+  --editor-content-max-width: 800px;
+
+  /* Heading sizes */
+  --heading-1-size: 2em;
+  --heading-2-size: 1.5em;
+  --heading-3-size: 1.25em;
+  --heading-4-size: 1.1em;
+  --heading-5-size: 1em;
+
+  /* Heading weights */
+  --heading-1-weight: 700;
+  --heading-2-weight: 600;
+
+  /* Heading underlines (add or remove) */
+  --heading-1-border: 1px solid var(--table-border);
+  --heading-1-padding: 8px;
+  --heading-2-border: none;  /* Remove underline */
+}
+```
+
+

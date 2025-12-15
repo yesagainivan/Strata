@@ -400,21 +400,22 @@ const darkThemeVars = {
 
 /**
  * Base editor theme (structural styles)
+ * Uses CSS variables with sensible defaults for typography customization
  */
 const baseTheme = EditorView.baseTheme({
     '&': {
         height: '100%',
     },
     '.cm-scroller': {
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        fontSize: '16px',
-        lineHeight: '1.6',
+        fontFamily: 'var(--editor-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
+        fontSize: 'var(--editor-font-size, 16px)',
+        lineHeight: 'var(--editor-line-height, 1.6)',
         overflow: 'auto',
     },
     '.cm-content': {
-        padding: '16px',
+        padding: 'var(--editor-content-padding, 16px)',
         width: '100%',
-        maxWidth: '800px',
+        maxWidth: 'var(--editor-content-max-width, 800px)',
         margin: '0 auto',
         wordWrap: 'break-word',
         whiteSpace: 'pre-wrap',
@@ -437,30 +438,35 @@ const baseTheme = EditorView.baseTheme({
         fontStyle: 'italic',
     },
 
-    // Headings (sized)
+    // Headings (sized with CSS variables for customization)
     '.cm-heading-1': {
-        fontSize: '2em',
-        fontWeight: '700',
+        fontSize: 'var(--heading-1-size, 2em)',
+        fontWeight: 'var(--heading-1-weight, 700)',
         color: 'var(--syntax-heading)',
+        borderBottom: 'var(--heading-1-border, none)',
+        paddingBottom: 'var(--heading-1-padding, 0)',
+        marginBottom: 'var(--heading-1-margin, 0)',
     },
     '.cm-heading-2': {
-        fontSize: '1.5em',
-        fontWeight: '600',
+        fontSize: 'var(--heading-2-size, 1.5em)',
+        fontWeight: 'var(--heading-2-weight, 600)',
         color: 'var(--syntax-heading)',
+        borderBottom: 'var(--heading-2-border, none)',
+        paddingBottom: 'var(--heading-2-padding, 0)',
     },
     '.cm-heading-3': {
-        fontSize: '1.25em',
-        fontWeight: '600',
+        fontSize: 'var(--heading-3-size, 1.25em)',
+        fontWeight: 'var(--heading-3-weight, 600)',
         color: 'var(--syntax-heading)',
     },
     '.cm-heading-4': {
-        fontSize: '1.1em',
-        fontWeight: '600',
+        fontSize: 'var(--heading-4-size, 1.1em)',
+        fontWeight: 'var(--heading-4-weight, 600)',
         color: 'var(--syntax-heading)',
     },
     '.cm-heading-5, .cm-heading-6': {
-        fontSize: '1em',
-        fontWeight: '600',
+        fontSize: 'var(--heading-5-size, 1em)',
+        fontWeight: 'var(--heading-5-weight, 600)',
         color: 'var(--syntax-heading)',
     },
 
@@ -485,10 +491,10 @@ const baseTheme = EditorView.baseTheme({
         borderRadius: '3px',
     },
 
-    // Highlights (==text==)
+    // Highlights (==text==) - uses warning colors by default for consistency
     '.cm-highlight': {
-        backgroundColor: 'var(--syntax-highlight-bg)',
-        color: 'var(--syntax-highlight-text)',
+        backgroundColor: 'var(--syntax-highlight-bg, var(--callout-warning-bg, #fef08a))',
+        color: 'var(--syntax-highlight-text, var(--callout-header-warning, #854d0e))',
         padding: '1px 2px',
         borderRadius: '2px',
     },

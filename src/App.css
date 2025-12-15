@@ -12,6 +12,7 @@
   --app-text-muted: var(--editor-gutter-text, #6b7280);
   --toolbar-bg: var(--editor-gutter-bg, #f8f9fa);
   --toolbar-border: var(--table-border, #e5e7eb);
+  /* --toolbar-border: #e5e7eb; */
   --button-bg: var(--editor-bg, #ffffff);
   --button-border: var(--table-border, #e5e7eb);
   --button-hover-bg: var(--editor-line-highlight, #f3f4f6);
@@ -285,6 +286,36 @@ body,
 
 .markdown-editor .cm-editor {
   height: 100%;
+}
+
+.markdown-editor {
+  /* Base typography */
+  /* --editor-font-family: 'Inter', sans-serif; */
+  --editor-font-family: 'SF Pro Display', sans-serif;
+  /* --editor-font-family: 'Helvetica', sans-serif; */
+  --editor-font-size: 16px;
+  --editor-line-height: 1.6;
+  --editor-content-padding: 16px;
+  --editor-content-max-width: 800px;
+
+  /* Heading sizes */
+  --heading-1-size: 2em;
+  --heading-2-size: 1.5em;
+  --heading-3-size: 1.25em;
+  --heading-4-size: 1em;
+  --heading-5-size: 0.8em;
+  --heading-6-size: 0.6em;
+
+  /* Heading weights */
+  --heading-1-weight: 700;
+  --heading-2-weight: 600;
+
+  /* Heading underlines (add or remove) */
+  --heading-1-border: 1px solid var(--table-border);
+  --heading-1-padding: 8px;
+  --heading-2-border: none;
+  /* Remove underline */
+
 }
 
 /* ============================================
