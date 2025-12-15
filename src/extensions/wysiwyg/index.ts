@@ -128,14 +128,34 @@ class HorizontalRuleWidget extends WidgetType {
 }
 
 /**
+ * Helper to scroll to a footnote definition
+ */
+function scrollToFootnoteDefinition(view: EditorView, footnoteId: string): void {
+    const doc = view.state.doc;
+    const escapedId = footnoteId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const defPattern = new RegExp(`^\\[\\^${escapedId}\\]:`);
+
+    // Search for the definition line
+    for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
+        const line = doc.line(lineNum);
+        if (defPattern.test(line.text)) {
+            // Scroll to the definition (center it) and place cursor there
+            view.dispatch({
+                selection: { anchor: line.from },
+                effects: EditorView.scrollIntoView(line.from, { y: 'center' }),
+            });
+            view.focus();
+            return;
+        }
+    }
+}
+
+/**
  * Footnote reference widget for clickable superscript numbers
- * Clicking scrolls to the footnote definition
+ * Uses data attribute for event delegation (no inline listener)
  */
 class FootnoteRefWidget extends WidgetType {
-    constructor(
-        private id: string,
-        private view: EditorView
-    ) {
+    constructor(private id: string) {
         super();
     }
 
@@ -145,46 +165,19 @@ class FootnoteRefWidget extends WidgetType {
         span.textContent = this.id;
         span.title = `Go to footnote ${this.id}`;
 
-        span.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.scrollToDefinition();
-        });
+        // Store footnote ID for event delegation
+        span.dataset.footnoteId = this.id;
 
         return span;
-    }
-
-    private scrollToDefinition() {
-        // ... (same implementation) ...
-        const doc = this.view.state.doc;
-        const defPattern = new RegExp(`^\\[\\^${this.escapeRegex(this.id)}\\]:`);
-
-        // Search for the definition line
-        for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
-            const line = doc.line(lineNum);
-            if (defPattern.test(line.text)) {
-                // Scroll to the definition (center it) and place cursor there
-                this.view.dispatch({
-                    selection: { anchor: line.from },
-                    effects: EditorView.scrollIntoView(line.from, { y: 'center' }),
-                });
-                this.view.focus();
-                return;
-            }
-        }
-    }
-
-    private escapeRegex(str: string): string {
-        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     eq(other: FootnoteRefWidget): boolean {
         return this.id === other.id;
     }
 
-    ignoreEvent(event: Event): boolean {
-        // Ignore mouse events so they don't trigger editor selection
-        return event.type === 'mousedown' || event.type === 'click';
+    ignoreEvent(): boolean {
+        // Return false to let events bubble to our event delegation handler
+        return false;
     }
 }
 
@@ -578,12 +571,12 @@ function buildDecorations(view: EditorView): DecorationSet {
                 const footnoteId = refMatch[1]; // The ID without brackets
 
                 if (!isActiveLine) {
-                    // Replace with clickable widget that scrolls to definition
+                    // Replace with widget - click handled by event delegation
                     decos.push({
                         from: matchFrom,
                         to: matchTo,
                         deco: Decoration.replace({
-                            widget: new FootnoteRefWidget(footnoteId, view),
+                            widget: new FootnoteRefWidget(footnoteId),
                         }),
                     });
                 } else {
@@ -646,8 +639,27 @@ const wysiwygPlugin = ViewPlugin.fromClass(
 );
 
 /**
+ * Event delegation handler for footnote reference clicks
+ * Single listener at editor level prevents memory leaks from per-widget listeners
+ */
+const footnoteClickHandler = EditorView.domEventHandlers({
+    mousedown(event, view) {
+        const target = event.target as HTMLElement;
+        const footnoteRef = target.closest('.cm-footnote-ref') as HTMLElement | null;
+
+        if (footnoteRef && footnoteRef.dataset.footnoteId) {
+            event.preventDefault();
+            event.stopPropagation();
+            scrollToFootnoteDefinition(view, footnoteRef.dataset.footnoteId);
+            return true;
+        }
+        return false;
+    }
+});
+
+/**
  * WYSIWYG extension that provides Obsidian-style live preview
  */
 export function wysiwygExtension(): Extension {
-    return [wysiwygPlugin];
+    return [wysiwygPlugin, footnoteClickHandler];
 }

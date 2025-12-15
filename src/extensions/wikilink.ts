@@ -59,12 +59,10 @@ function parseWikilinks(text: string, offset: number): WikilinkMatch[] {
 
 /**
  * Wikilink widget for rendering clickable links
+ * Uses data attributes for event delegation (no inline listeners)
  */
 class WikilinkWidget extends WidgetType {
-    constructor(
-        private match: WikilinkMatch,
-        private onClick?: (target: string, alias?: string) => void
-    ) {
+    constructor(private match: WikilinkMatch) {
         super();
     }
 
@@ -73,16 +71,17 @@ class WikilinkWidget extends WidgetType {
         span.className = 'cm-wikilink';
         span.textContent = this.match.alias || this.match.target;
 
+        // Store data for event delegation
+        span.dataset.wikilinkTarget = this.match.target;
+        if (this.match.alias) {
+            span.dataset.wikilinkAlias = this.match.alias;
+        }
+
         if (this.match.heading) {
             span.title = `${this.match.target}#${this.match.heading}`;
         } else {
             span.title = this.match.target;
         }
-
-        span.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.onClick?.(this.match.target, this.match.alias);
-        });
 
         return span;
     }
@@ -107,10 +106,7 @@ const wikilinkMark = Decoration.mark({ class: 'cm-wikilink-source' });
 /**
  * Build decorations for wikilinks
  */
-function buildWikilinkDecorations(
-    view: EditorView,
-    onClick?: (target: string, alias?: string) => void
-): DecorationSet {
+function buildWikilinkDecorations(view: EditorView): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>();
     const doc = view.state.doc;
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
@@ -132,7 +128,7 @@ function buildWikilinkDecorations(
                     match.from,
                     match.to,
                     Decoration.replace({
-                        widget: new WikilinkWidget(match, onClick),
+                        widget: new WikilinkWidget(match),
                     })
                 );
             }
@@ -145,25 +141,45 @@ function buildWikilinkDecorations(
 /**
  * View plugin for wikilink decorations
  */
-function createWikilinkPlugin(config: WikilinkConfig) {
-    return ViewPlugin.fromClass(
-        class {
-            decorations: DecorationSet;
+const wikilinkPlugin = ViewPlugin.fromClass(
+    class {
+        decorations: DecorationSet;
 
-            constructor(view: EditorView) {
-                this.decorations = buildWikilinkDecorations(view, config.onClick);
-            }
-
-            update(update: ViewUpdate) {
-                if (update.docChanged || update.viewportChanged || update.selectionSet) {
-                    this.decorations = buildWikilinkDecorations(update.view, config.onClick);
-                }
-            }
-        },
-        {
-            decorations: (v) => v.decorations,
+        constructor(view: EditorView) {
+            this.decorations = buildWikilinkDecorations(view);
         }
-    );
+
+        update(update: ViewUpdate) {
+            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+                this.decorations = buildWikilinkDecorations(update.view);
+            }
+        }
+    },
+    {
+        decorations: (v) => v.decorations,
+    }
+);
+
+/**
+ * Create event delegation handler for wikilink clicks
+ * Uses closure to capture the onClick callback
+ */
+function createWikilinkClickHandler(onClick?: (target: string, alias?: string) => void): Extension {
+    if (!onClick) return [];
+
+    return EditorView.domEventHandlers({
+        click(event, _view) {
+            const target = event.target as HTMLElement;
+            const wikilink = target.closest('.cm-wikilink') as HTMLElement | null;
+
+            if (wikilink && wikilink.dataset.wikilinkTarget) {
+                event.preventDefault();
+                onClick(wikilink.dataset.wikilinkTarget, wikilink.dataset.wikilinkAlias);
+                return true;
+            }
+            return false;
+        }
+    });
 }
 
 /**
@@ -180,5 +196,5 @@ const wikilinkTheme = EditorView.baseTheme({
  * Wikilink extension for Obsidian-style [[links]]
  */
 export function wikilinkExtension(config: WikilinkConfig = {}): Extension {
-    return [createWikilinkPlugin(config), wikilinkTheme];
+    return [wikilinkPlugin, wikilinkTheme, createWikilinkClickHandler(config.onClick)];
 }

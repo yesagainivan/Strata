@@ -117,7 +117,7 @@ class CalloutIconWidget extends WidgetType {
         super();
     }
 
-    toDOM(view: EditorView): HTMLElement {
+    toDOM(): HTMLElement {
         const span = document.createElement('span');
         span.className = `cm-callout-header-widget cm-callout-header-${this.styleType}`;
 
@@ -134,6 +134,7 @@ class CalloutIconWidget extends WidgetType {
         span.appendChild(titleSpan);
 
         // Add fold toggle on the right if foldable
+        // Uses data attribute for event delegation (no inline listener)
         if (this.isFoldable) {
             const foldToggle = document.createElement('span');
             foldToggle.className = `cm-callout-fold-toggle ${this.isFolded ? 'cm-callout-folded' : ''}`;
@@ -142,16 +143,8 @@ class CalloutIconWidget extends WidgetType {
             foldToggle.setAttribute('role', 'button');
             foldToggle.setAttribute('tabindex', '0');
 
-            // Store line number for click handler
+            // Store line number for event delegation
             foldToggle.dataset.calloutLine = String(this.lineNumber);
-
-            foldToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                view.dispatch({
-                    effects: toggleFoldEffect.of({ line: this.lineNumber })
-                });
-            });
 
             span.appendChild(foldToggle);
         }
@@ -165,6 +158,11 @@ class CalloutIconWidget extends WidgetType {
             this.isFoldable === other.isFoldable &&
             this.isFolded === other.isFolded &&
             this.lineNumber === other.lineNumber;
+    }
+
+    ignoreEvent(): boolean {
+        // Return false to let events bubble to our event delegation handler
+        return false;
     }
 }
 
@@ -475,6 +473,30 @@ const calloutTheme = EditorView.baseTheme({
     },
 });
 
+/**
+ * Event delegation handler for callout fold toggles
+ * Single listener at editor level prevents memory leaks from per-widget listeners
+ */
+const calloutClickHandler = EditorView.domEventHandlers({
+    mousedown(event, view) {
+        const target = event.target as HTMLElement;
+        const foldToggle = target.closest('.cm-callout-fold-toggle') as HTMLElement | null;
+
+        if (foldToggle && foldToggle.dataset.calloutLine) {
+            event.preventDefault();
+            event.stopPropagation();
+            const lineNumber = parseInt(foldToggle.dataset.calloutLine, 10);
+            if (!isNaN(lineNumber)) {
+                view.dispatch({
+                    effects: toggleFoldEffect.of({ line: lineNumber })
+                });
+            }
+            return true;
+        }
+        return false;
+    }
+});
+
 export function calloutExtension(): Extension {
-    return [foldState, calloutPlugin, calloutTheme];
+    return [foldState, calloutPlugin, calloutTheme, calloutClickHandler];
 }

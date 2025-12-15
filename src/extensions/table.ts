@@ -1,10 +1,10 @@
 /**
  * Table extension for Obsidian-style table rendering
  * 
- * Uses StateField for block decorations (required by CodeMirror 6)
+ * Uses EditorView.decorations.compute() for block decorations
  */
 
-import { Extension, RangeSetBuilder, StateField, EditorState } from '@codemirror/state';
+import { Extension, RangeSetBuilder } from '@codemirror/state';
 import {
     Decoration,
     DecorationSet,
@@ -51,13 +51,17 @@ function parseRow(row: string): string[] {
 }
 
 /**
- * Find all tables in the document
+ * Find tables within a specific line range (for visible range optimization)
  */
-function findTables(doc: { line: (n: number) => { text: string; from: number; to: number }; lines: number }): TableBlock[] {
+function findTablesInRange(
+    doc: { line: (n: number) => { text: string; from: number; to: number }; lines: number },
+    startLineNum: number,
+    endLineNum: number
+): TableBlock[] {
     const tables: TableBlock[] = [];
-    let i = 1;
+    let i = startLineNum;
 
-    while (i <= doc.lines) {
+    while (i <= endLineNum) {
         const line = doc.line(i);
         const text = line.text.trim();
 
@@ -75,6 +79,7 @@ function findTables(doc: { line: (n: number) => { text: string; from: number; to
                     let endLine = i + 1;
                     let j = i + 2;
 
+                    // Continue past visible range to find complete table
                     while (j <= doc.lines) {
                         const bodyLine = doc.line(j);
                         const bodyText = bodyLine.text.trim();
@@ -167,71 +172,62 @@ class TableWidget extends WidgetType {
     }
 }
 
+
 /**
- * Build table decorations
+ * Computed decorations for tables - uses compute() for block widget support with view access
+ * Unlike ViewPlugin, compute() supports block decorations while still having view access
  */
-function buildTableDecorations(state: EditorState): DecorationSet {
-    const doc = state.doc;
-    const tables = findTables(doc);
+const tableDecorations = EditorView.decorations.compute(
+    ['doc', 'selection'],
+    (state) => {
+        // Note: compute() doesn't have direct view access, so we fall back to full doc scan
+        // This is a CM6 limitation for block decorations
+        const doc = state.doc;
+        const cursorPos = state.selection.main.head;
 
-    const cursorPos = state.selection.main.head;
+        const allDecos: { from: number; to: number; deco: Decoration }[] = [];
 
-    // We need to add decorations in document order
-    const allDecos: { from: number; to: number; deco: Decoration }[] = [];
+        // Scan entire document for tables (required for block decorations)
+        const tables = findTablesInRange(doc, 1, doc.lines);
 
-    for (const table of tables) {
-        const isEditing = cursorPos >= table.from && cursorPos <= table.to;
+        for (const table of tables) {
+            const isEditing = cursorPos >= table.from && cursorPos <= table.to;
 
-        if (!isEditing) {
-            // Add widget at the start of the table
-            allDecos.push({
-                from: table.from,
-                to: table.from,
-                deco: Decoration.widget({
-                    widget: new TableWidget(table),
-                    block: true,
-                    side: -1,
-                }),
-            });
-
-            // Hide all table lines using line decorations
-            for (let lineNum = table.startLine; lineNum <= table.endLine; lineNum++) {
-                const line = doc.line(lineNum);
+            if (!isEditing) {
+                // Add widget at the start of the table
                 allDecos.push({
-                    from: line.from,
-                    to: line.from, // Line decorations use from=to at line start
-                    deco: Decoration.line({ class: 'cm-table-hidden-line' }),
+                    from: table.from,
+                    to: table.from,
+                    deco: Decoration.widget({
+                        widget: new TableWidget(table),
+                        block: true,
+                        side: -1,
+                    }),
                 });
+
+                // Hide all table lines using line decorations
+                for (let lineNum = table.startLine; lineNum <= table.endLine; lineNum++) {
+                    const line = doc.line(lineNum);
+                    allDecos.push({
+                        from: line.from,
+                        to: line.from,
+                        deco: Decoration.line({ class: 'cm-table-hidden-line' }),
+                    });
+                }
             }
         }
-    }
 
-    // Sort decorations by position
-    allDecos.sort((a, b) => a.from - b.from || a.to - b.to);
+        // Sort decorations by position
+        allDecos.sort((a, b) => a.from - b.from || a.to - b.to);
 
-    const builder = new RangeSetBuilder<Decoration>();
-    for (const { from, to, deco } of allDecos) {
-        builder.add(from, to, deco);
-    }
-
-    return builder.finish();
-}
-
-/**
- * StateField for table decorations (required for block widgets)
- */
-const tableField = StateField.define<DecorationSet>({
-    create(state) {
-        return buildTableDecorations(state);
-    },
-    update(decorations, tr) {
-        if (tr.docChanged || tr.selection) {
-            return buildTableDecorations(tr.state);
+        const builder = new RangeSetBuilder<Decoration>();
+        for (const { from, to, deco } of allDecos) {
+            builder.add(from, to, deco);
         }
-        return decorations;
-    },
-    provide: field => EditorView.decorations.from(field),
-});
+
+        return builder.finish();
+    }
+);
 
 /**
  * Theme for rendered tables
@@ -277,6 +273,6 @@ const tableTheme = EditorView.baseTheme({
  * Table extension with Obsidian-style rendering
  */
 export function tableExtension(): Extension {
-    return [tableField, tableTheme];
+    return [tableDecorations, tableTheme];
 }
 
