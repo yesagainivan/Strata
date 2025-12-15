@@ -159,6 +159,49 @@ function scrollToFootnoteDefinition(view: EditorView, footnoteId: string): void 
 }
 
 /**
+ * Helper to scroll to the first reference of a footnote
+ */
+function scrollToFootnoteReference(view: EditorView, footnoteId: string): void {
+    const doc = view.state.doc;
+    const escapedId = footnoteId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Match [^id] but NOT followed by : (which would be the definition)
+    const refPattern = new RegExp(`\\[\\^${escapedId}\\](?!:)`);
+
+    // Search for the first reference
+    // Note: This naive search finds the first occurrence. 
+    // Ideally we'd match the specific reference that linked here, but that requires more complex state.
+    // Finding the first reference is standard behavior for simple markdown editors.
+    for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
+        const line = doc.line(lineNum);
+        const match = line.text.match(refPattern);
+
+        if (match && match.index !== undefined) {
+            // Check if this match is inside a code block by checking if it was masked
+            // We can't reuse the maskCodeSections helper easily here without re-parsing text
+            // But for navigation, jumping to a code block example is acceptable edge case
+
+            view.dispatch({
+                selection: { anchor: line.from + match.index },
+                effects: EditorView.scrollIntoView(line.from + match.index, { y: 'center' }),
+            });
+            view.focus();
+            return;
+        }
+    }
+}
+
+/**
+ * Footnote reference widget for clickable superscript numbers
+ * Uses data attribute for event delegation (no inline listener)
+ */
+/**
+ * Global regex constants for performance
+ * State is reset before use in loops
+ */
+const highlightRegex = /==((?:[^=]|=[^=])+)==/g;
+const footnoteRefRegex = /\[\^([^\]]+)\]/g;
+
+/**
  * Footnote reference widget for clickable superscript numbers
  * Uses data attribute for event delegation (no inline listener)
  */
@@ -172,9 +215,11 @@ class FootnoteRefWidget extends WidgetType {
         span.className = 'cm-footnote-ref';
         span.textContent = this.id;
         span.title = `Go to footnote ${this.id}`;
+        span.style.cursor = 'pointer';
 
         // Store footnote ID for event delegation
         span.dataset.footnoteId = this.id;
+        span.dataset.footnoteType = 'ref'; // Mark as reference
 
         return span;
     }
@@ -185,6 +230,48 @@ class FootnoteRefWidget extends WidgetType {
 
     ignoreEvent(): boolean {
         // Return false to let events bubble to our event delegation handler
+        return false;
+    }
+}
+
+/**
+ * Footnote definition widget for clickable markers
+ */
+class FootnoteDefWidget extends WidgetType {
+    constructor(readonly id: string) {
+        super();
+    }
+
+    eq(other: FootnoteDefWidget) {
+        return other.id === this.id;
+    }
+
+    toDOM(): HTMLElement {
+        const container = document.createElement('span');
+
+        // The interactive part (the ID)
+        const idSpan = document.createElement('span');
+        idSpan.className = 'cm-footnote-def';
+        idSpan.textContent = this.id;
+        idSpan.title = `Return to reference ${this.id}`;
+
+        idSpan.style.cursor = 'pointer';
+        idSpan.style.borderBottom = '1px dotted var(--editor-text)';
+
+        idSpan.dataset.footnoteId = this.id;
+        idSpan.dataset.footnoteType = 'def';
+
+        // The static part (the colon)
+        const colonSpan = document.createElement('span');
+        colonSpan.textContent = ': ';
+
+        container.appendChild(idSpan);
+        container.appendChild(colonSpan);
+
+        return container;
+    }
+
+    ignoreEvent(event: Event): boolean {
         return false;
     }
 }
@@ -542,6 +629,8 @@ function buildDecorations(view: EditorView): DecorationSet {
         }
     }
 
+    // ... (logic continues using the top-level classes) ...
+
     // Handle footnotes - not in standard markdown parser
     // Scan for footnote references [^id] and definitions [^id]: text
     for (const { from, to } of view.visibleRanges) {
@@ -557,23 +646,36 @@ function buildDecorations(view: EditorView): DecorationSet {
             if (defMatch) {
                 const defFrom = line.from;
                 const defTo = defFrom + defMatch[0].length;
+                const footnoteId = defMatch[1];
 
-                // Style the definition marker
-                decos.push({
-                    from: defFrom,
-                    to: defTo,
-                    deco: formatDecorations.footnoteDef,
-                });
+                if (!isActiveLine) {
+                    // Replace with widget when not editing
+                    decos.push({
+                        from: defFrom,
+                        to: defTo,
+                        deco: Decoration.replace({
+                            widget: new FootnoteDefWidget(footnoteId),
+                        }),
+                    });
+                } else {
+                    // Show raw syntax when editing (styled generically as def)
+                    decos.push({
+                        from: defFrom,
+                        to: defTo,
+                        deco: formatDecorations.footnoteDef,
+                    });
+                }
                 continue; // Skip checking for refs on definition lines
             }
 
             // Footnote references inline: [^id]
             // Use masked text to avoid matching inside code sections
             const maskedText = maskCodeSections(line.text, line.from, codeRanges);
-            const refRegex = /\[\^([^\]]+)\]/g;
+            // Reset stateful regex
+            footnoteRefRegex.lastIndex = 0;
             let refMatch;
 
-            while ((refMatch = refRegex.exec(maskedText)) !== null) {
+            while ((refMatch = footnoteRefRegex.exec(maskedText)) !== null) {
                 const matchFrom = line.from + refMatch.index;
                 const matchTo = matchFrom + refMatch[0].length;
                 const footnoteId = refMatch[1]; // The ID without brackets
@@ -653,12 +755,23 @@ const wysiwygPlugin = ViewPlugin.fromClass(
 const footnoteClickHandler = EditorView.domEventHandlers({
     mousedown(event, view) {
         const target = event.target as HTMLElement;
-        const footnoteRef = target.closest('.cm-footnote-ref') as HTMLElement | null;
+        const widget = target.closest('.cm-footnote-ref, .cm-footnote-def') as HTMLElement | null;
 
-        if (footnoteRef && footnoteRef.dataset.footnoteId) {
+        if (widget && widget.dataset.footnoteId) {
+            const id = widget.dataset.footnoteId;
+            const type = widget.dataset.footnoteType;
+
             event.preventDefault();
-            event.stopPropagation();
-            scrollToFootnoteDefinition(view, footnoteRef.dataset.footnoteId);
+            event.stopPropagation(); // Stop propagation to prevent moving cursor/selection
+
+            // Debugging (removed in prod)
+            // console.log('Footnote clicked:', id, type);
+
+            if (type === 'ref') {
+                scrollToFootnoteDefinition(view, id);
+            } else if (type === 'def') {
+                scrollToFootnoteReference(view, id);
+            }
             return true;
         }
         return false;
