@@ -88,6 +88,10 @@ export interface MarkdownEditorHandle {
   focus: () => void;
   /** Insert text at cursor position */
   insertText: (text: string) => void;
+  /** Get the current selection */
+  getSelection: () => string;
+  /** Replace the current selection with text */
+  replaceSelection: (text: string) => void;
   /** Wrap selected text with before/after syntax, or insert if no selection */
   wrapSelection: (before: string, after: string) => void;
   /** Get the underlying CodeMirror EditorView */

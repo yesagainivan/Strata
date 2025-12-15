@@ -188,6 +188,21 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                         });
                     }
                 },
+                getSelection: () => {
+                    if (editorRef.current) {
+                        const { from, to } = editorRef.current.state.selection.main;
+                        return editorRef.current.state.sliceDoc(from, to);
+                    }
+                    return '';
+                },
+                replaceSelection: (text: string) => {
+                    if (editorRef.current) {
+                        const { from, to } = editorRef.current.state.selection.main;
+                        editorRef.current.dispatch({
+                            changes: { from, to, insert: text },
+                        });
+                    }
+                },
                 wrapSelection: (before: string, after: string) => {
                     if (editorRef.current) {
                         const { from, to } = editorRef.current.state.selection.main;
