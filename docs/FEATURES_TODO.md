@@ -13,7 +13,7 @@ Obsidian-style features to implement in the editor.
 - [x] Image embeds (`![[image.png]]`)
 - [x] Consistent list styling
 - [x] Highlights (`==highlighted text==`)
-- [ ] Horizontal rules (`---` or `***`)
+- [x] Horizontal rules (`---` or `***`)
 - [ ] Footnotes (`[^1]` and `[^1]: definition`)
 
 ## Medium Priority

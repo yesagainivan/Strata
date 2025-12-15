@@ -111,6 +111,21 @@ class OrderedListWidget extends WidgetType {
 }
 
 /**
+ * Horizontal rule widget for visual separator
+ */
+class HorizontalRuleWidget extends WidgetType {
+    toDOM(): HTMLElement {
+        const hr = document.createElement('div');
+        hr.className = 'cm-horizontal-rule';
+        return hr;
+    }
+
+    eq(): boolean {
+        return true;
+    }
+}
+
+/**
  * Decoration entry for sorting before adding to builder
  */
 interface DecoEntry {
@@ -208,6 +223,27 @@ function buildDecorations(view: EditorView): DecorationSet {
                     // Only apply blockquote styling if NOT a callout
                     if (!text.match(/^>\s*\[!/)) {
                         decos.push({ from: node.from, to: node.to, deco: formatDecorations.blockquote });
+                    }
+                }
+
+                // Horizontal rules (---, ***, ___)
+                if (node.name === 'HorizontalRule') {
+                    if (!isActiveLine) {
+                        // Replace the raw markdown with a styled horizontal line widget
+                        decos.push({
+                            from: node.from,
+                            to: node.to,
+                            deco: Decoration.replace({
+                                widget: new HorizontalRuleWidget(),
+                            }),
+                        });
+                    } else {
+                        // On active line, style the raw markdown
+                        decos.push({
+                            from: node.from,
+                            to: node.to,
+                            deco: Decoration.mark({ class: 'cm-hr-source' }),
+                        });
                     }
                 }
 

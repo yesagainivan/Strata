@@ -226,6 +226,20 @@ const baseTheme = EditorView.baseTheme({
         fontWeight: 'bold',
     },
 
+    // Horizontal rules
+    '.cm-horizontal-rule': {
+        display: 'block',
+        width: '100%',
+        height: '1px',
+        backgroundColor: 'var(--editor-gutter-text)',
+        margin: '16px 0',
+        opacity: '0.5',
+    },
+    '.cm-hr-source': {
+        color: 'var(--editor-gutter-text)',
+        opacity: '0.6',
+    },
+
     // Code blocks
     '.cm-code-block': {
         fontFamily: '"SF Mono", Monaco, "Cascadia Code", monospace',
