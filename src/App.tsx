@@ -9,73 +9,123 @@ import 'katex/dist/katex.min.css';
 import './App.css';
 
 // Sample markdown content demonstrating all features
-const DEMO_CONTENT = `# Welcome to the Markdown Editor
+const DEMO_CONTENT = `# Modern Markdown Editor Showcase
 
-This is an **Obsidian-style** markdown editor built with CodeMirror 6.
+Welcome to **Modern Markdown Editor**! This demo showcases the Obsidian-style WYSIWYG features handled by CodeMirror 6.
 
-## Features
+This document is designed to test **footnote navigation**[^1]. Click that little number to jump to the bottom!
 
-### WYSIWYG Editing
-The editor hides markdown syntax when you're not editing that line:
-- **Bold text** renders without the asterisks
-- *Italic text* hides the single asterisks  
-- \`inline code\` renders in a code style
-- ~~Strikethrough~~ works too!
+## 1. Text Formatting & Highlights
+Standard markdown works as expected, but with a twist—syntax hides when you're not editing:
+- **Bold** and *Italic* are clean.
+- ~~Strikethrough~~ is supported.
+- \`Inline code\` looks like code.
+- **Highlights**: Use \`==\` to ==highlight important text== like this!
 
-### Wikilinks
-Link to other notes with [[Note Name]] or use an alias [[Note Name|Display Text]].
-You can also link to headings [[Note#Heading]] or blocks [[Note#^block-id]].
+---
 
-### Images
-Embed images with \`![[image.png]]\` or \`![[image.png|alt text]]\`.
-![[https://picsum.photos/id/237/200/120|Puppy]]
+## 2. Lists & Tasks
+We've implemented consistent styling for all list types:
 
-### Tags
-Organize your notes with #tags and #nested/tags. Click them to filter!
+### Unordered
+- Level 1 bullet
+  - Level 2 bullet
+    - Level 3 bullet
 
-### Callouts
-
-> [!info] Information
-> This is an info callout. It supports **markdown** inside!
-
-> [!warning] Be Careful
-> Warnings help highlight important information.
-
-> [!tip]+ Collapsible Tip
-> This callout can be folded!
-
-> [!danger] Critical
-> Use this for critical warnings.
-
-### Math (LaTeX)
-
-Inline math: $E = mc^2$ and $\\frac{a}{b}$
-
-Block math (single line): $$\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}$$
-
-### Tables
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| WYSIWYG | ✅ Done | Hides syntax when not editing |
-| Tables | ✅ Done | Header styling, separators |
-| Math | ✅ Done | KaTeX rendering |
+### Ordered
+1. First step
+2. Second step
+   1. Sub-step A
+   2. Sub-step B
+3. Third step
 
 ### Task Lists
-- [ ] Uncompleted task
-- [x] Completed task
-- [ ] Another thing to do
+- [ ] To Do: Implement block embeds
+- [x] Done: Consistent list styling
+- [x] Done: Highlights
+- [x] Done: Footnotes
+- [/] In Progress: Editor perfection
 
-### Code Blocks
-\`\`\`javascript
-function hello() {
-  console.log("Hello, world!");
+---
+
+## 3. Obsidian Features
+
+### Callouts
+We support standard Obsidian callouts with custom styling:
+
+> [!info] Did you know?
+> Callouts are perfect for highlighting side notes or warnings.
+> They support **bold** and *italics* too.
+
+> [!tip] Pro Tip
+> You can fold these callouts if you implement the folding extension!
+
+> [!warning] Caution
+> Be careful with your regex patterns.
+
+> [!danger] Critical Error
+> Something went wrong here.
+
+### Wikilinks & Tags
+- Link to other notes: [[Project Roadmap]] or [[Project Roadmap|with alias]].
+- Organize content with tags: #productivity #dev/obsidian #ideas.
+
+---
+
+## 4. Math & Tables
+
+### LaTeX Math
+Inline math: $e^{i\\pi} + 1 = 0$
+
+Block math:
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
+$$
+
+### Data Tables
+| Feature | Implementation | Status |
+| :--- | :---: | ---: |
+| WYSIWYG | CM6 Decorators | ✅ |
+| Math | KaTeX | ✅ |
+| Tables | GFM | ✅ |
+| Speed | Rust/WASM | 🚀 |
+
+---
+
+## 5. Code Blocks
+
+\`\`\`typescript
+interface User {
+  id: number;
+  name: string;
+  role: 'admin' | 'user';
+}
+
+function greet(user: User) {
+  console.log(\`Hello, \${user.name}!\`);
 }
 \`\`\`
 
 ---
 
-Try editing this content to see the WYSIWYG in action!
+## 6. Filler Section for Scrolling
+*(This section exists to ensure the document is long enough to demonstrate the scroll-to-footnote feature)*
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.
+
+... (Keep scrolling) ...
+
+---
+
+## 7. Footnotes Area
+
+Here is the definition for the footnote referenced at the top.
+
+[^1]: **Success!** You clicked the footnote reference and the editor scrolled you down here. The definition works with standard markdown syntax \`[^1]: ...\`.
 `;
 
 // Custom @mention extension example
@@ -121,11 +171,13 @@ function App() {
         <div className="toolbar-group">
           <button onClick={() => insertText('**bold**')}>Bold</button>
           <button onClick={() => insertText('*italic*')}>Italic</button>
+          <button onClick={() => insertText('==highlight==')}>Highlight</button>
           <button onClick={() => insertText('[[link]]')}>Wikilink</button>
           <button onClick={() => insertText('#tag')}>Tag</button>
           <button onClick={() => insertText('> [!info] Title\n> Content')}>Callout</button>
           <button onClick={() => insertText('$x^2$')}>Math</button>
           <button onClick={() => insertText('| A | B |\n|---|---|\n| 1 | 2 |')}>Table</button>
+          <button onClick={() => insertText('\n---\n')}>HR</button>
         </div>
         <div className="toolbar-group">
           <button onClick={toggleTheme}>

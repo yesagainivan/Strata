@@ -145,7 +145,7 @@ class FootnoteRefWidget extends WidgetType {
         span.textContent = this.id;
         span.title = `Go to footnote ${this.id}`;
 
-        span.addEventListener('click', (e) => {
+        span.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             this.scrollToDefinition();
@@ -155,6 +155,7 @@ class FootnoteRefWidget extends WidgetType {
     }
 
     private scrollToDefinition() {
+        // ... (same implementation) ...
         const doc = this.view.state.doc;
         const defPattern = new RegExp(`^\\[\\^${this.escapeRegex(this.id)}\\]:`);
 
@@ -162,10 +163,10 @@ class FootnoteRefWidget extends WidgetType {
         for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
             const line = doc.line(lineNum);
             if (defPattern.test(line.text)) {
-                // Scroll to the definition and place cursor there
+                // Scroll to the definition (center it) and place cursor there
                 this.view.dispatch({
                     selection: { anchor: line.from },
-                    scrollIntoView: true,
+                    effects: EditorView.scrollIntoView(line.from, { y: 'center' }),
                 });
                 this.view.focus();
                 return;
@@ -181,8 +182,9 @@ class FootnoteRefWidget extends WidgetType {
         return this.id === other.id;
     }
 
-    ignoreEvent(): boolean {
-        return false;
+    ignoreEvent(event: Event): boolean {
+        // Ignore mouse events so they don't trigger editor selection
+        return event.type === 'mousedown' || event.type === 'click';
     }
 }
 
@@ -196,6 +198,90 @@ interface DecoEntry {
 }
 
 /**
+ * Range that should be excluded from regex-based decorations (code blocks, inline code)
+ */
+interface ExcludedRange {
+    from: number;
+    to: number;
+}
+
+/**
+ * Collect ranges of code nodes from the syntax tree.
+ * These ranges should be excluded from regex-based decoration scanning.
+ */
+function collectCodeRanges(view: EditorView): ExcludedRange[] {
+    const ranges: ExcludedRange[] = [];
+
+    for (const { from, to } of view.visibleRanges) {
+        syntaxTree(view.state).iterate({
+            from,
+            to,
+            enter(node) {
+                // Exclude inline code, fenced code blocks, and code text
+                if (
+                    node.name === 'InlineCode' ||
+                    node.name === 'FencedCode' ||
+                    node.name === 'CodeBlock' ||
+                    node.name === 'CodeText'
+                ) {
+                    ranges.push({ from: node.from, to: node.to });
+                }
+            },
+        });
+    }
+
+    return ranges;
+}
+
+/**
+ * Check if a range overlaps with any excluded code range
+ */
+function isInsideCodeRange(
+    matchFrom: number,
+    matchTo: number,
+    codeRanges: ExcludedRange[]
+): boolean {
+    for (const range of codeRanges) {
+        // Check if match overlaps with code range
+        if (matchFrom < range.to && matchTo > range.from) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Mask code sections in a line's text by replacing them with spaces.
+ * This prevents regex from matching across code boundaries.
+ * Returns the masked text (positions remain aligned with original).
+ */
+function maskCodeSections(
+    lineText: string,
+    lineFrom: number,
+    codeRanges: ExcludedRange[]
+): string {
+    let masked = lineText;
+
+    for (const range of codeRanges) {
+        // Check if this code range intersects with the line
+        const lineEnd = lineFrom + lineText.length;
+        if (range.from < lineEnd && range.to > lineFrom) {
+            // Calculate relative positions within the line
+            const relStart = Math.max(0, range.from - lineFrom);
+            const relEnd = Math.min(lineText.length, range.to - lineFrom);
+
+            // Replace code section with spaces (preserves positions)
+            const before = masked.slice(0, relStart);
+            const spaces = ' '.repeat(relEnd - relStart);
+            const after = masked.slice(relEnd);
+            masked = before + spaces + after;
+        }
+    }
+
+    return masked;
+}
+
+/**
  * Build decorations for the visible content
  */
 function buildDecorations(view: EditorView): DecorationSet {
@@ -204,6 +290,9 @@ function buildDecorations(view: EditorView): DecorationSet {
 
     // Get the line containing the cursor
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
+
+    // Collect code ranges to exclude from regex-based decorations
+    const codeRanges = collectCodeRanges(view);
 
     for (const { from, to } of view.visibleRanges) {
         syntaxTree(view.state).iterate({
@@ -392,10 +481,13 @@ function buildDecorations(view: EditorView): DecorationSet {
         for (let lineNum = lineStart; lineNum <= lineEnd; lineNum++) {
             const line = doc.line(lineNum);
             const isActiveLine = lineNum === cursorLine;
+
+            // Mask code sections so regex can't match across them
+            const maskedText = maskCodeSections(line.text, line.from, codeRanges);
             const highlightRegex = /==((?:[^=]|=[^=])+)==/g;
             let match;
 
-            while ((match = highlightRegex.exec(line.text)) !== null) {
+            while ((match = highlightRegex.exec(maskedText)) !== null) {
                 const matchFrom = line.from + match.index;
                 const matchTo = matchFrom + match[0].length;
 
@@ -450,6 +542,11 @@ function buildDecorations(view: EditorView): DecorationSet {
                 const matchFrom = line.from + refMatch.index;
                 const matchTo = matchFrom + refMatch[0].length;
                 const footnoteId = refMatch[1]; // The ID without brackets
+
+                // Skip if inside code block or inline code
+                if (isInsideCodeRange(matchFrom, matchTo, codeRanges)) {
+                    continue;
+                }
 
                 if (!isActiveLine) {
                     // Replace with clickable widget that scrolls to definition
