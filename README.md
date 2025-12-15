@@ -62,9 +62,7 @@ function App() {
 }
 ```
 
-## Foldable Callouts
 
-Callouts support Obsidian-style folding (`+` for expanded, `-` for collapsed). See the [Callouts Documentation](docs/callouts.md) for full syntax details.
 
 ## Contributing
 
