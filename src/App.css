@@ -311,11 +311,13 @@ body,
   --heading-2-weight: 600;
 
   /* Heading underlines (add or remove) */
-  --heading-1-border: 1px solid var(--table-border);
+  /* --heading-1-border: 1px solid var(--table-border); */
   --heading-1-padding: 8px;
   --heading-2-border: none;
   /* Remove underline */
 
+  /* Remove link underline */
+  --link-underline: none;
 }
 
 /* ============================================

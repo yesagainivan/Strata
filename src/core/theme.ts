@@ -439,10 +439,12 @@ const baseTheme = EditorView.baseTheme({
     },
 
     // Headings (sized with CSS variables for customization)
+    // textDecoration: 'none' overrides underline from defaultHighlightStyle
     '.cm-heading-1': {
         fontSize: 'var(--heading-1-size, 2em)',
         fontWeight: 'var(--heading-1-weight, 700)',
         color: 'var(--syntax-heading)',
+        textDecoration: 'var(--heading-1-decoration, none)',
         borderBottom: 'var(--heading-1-border, none)',
         paddingBottom: 'var(--heading-1-padding, 0)',
         marginBottom: 'var(--heading-1-margin, 0)',
@@ -451,6 +453,7 @@ const baseTheme = EditorView.baseTheme({
         fontSize: 'var(--heading-2-size, 1.5em)',
         fontWeight: 'var(--heading-2-weight, 600)',
         color: 'var(--syntax-heading)',
+        textDecoration: 'var(--heading-2-decoration, none)',
         borderBottom: 'var(--heading-2-border, none)',
         paddingBottom: 'var(--heading-2-padding, 0)',
     },
@@ -458,16 +461,31 @@ const baseTheme = EditorView.baseTheme({
         fontSize: 'var(--heading-3-size, 1.25em)',
         fontWeight: 'var(--heading-3-weight, 600)',
         color: 'var(--syntax-heading)',
+        textDecoration: 'var(--heading-3-decoration, none)',
     },
     '.cm-heading-4': {
         fontSize: 'var(--heading-4-size, 1.1em)',
         fontWeight: 'var(--heading-4-weight, 600)',
         color: 'var(--syntax-heading)',
+        textDecoration: 'var(--heading-4-decoration, none)',
     },
-    '.cm-heading-5, .cm-heading-6': {
+    '.cm-heading-5': {
         fontSize: 'var(--heading-5-size, 1em)',
         fontWeight: 'var(--heading-5-weight, 600)',
         color: 'var(--syntax-heading)',
+        textDecoration: 'var(--heading-5-decoration, none)',
+    },
+    '.cm-heading-6': {
+        fontSize: 'var(--heading-6-size, 0.9em)',
+        fontWeight: 'var(--heading-6-weight, 600)',
+        color: 'var(--syntax-heading)',
+        textDecoration: 'var(--heading-6-decoration, none)',
+    },
+
+    // Override text-decoration on ALL children inside headings
+    // This targets the inner spans created by defaultHighlightStyle (ͼ7 class)
+    '.cm-heading-1 *, .cm-heading-2 *, .cm-heading-3 *, .cm-heading-4 *, .cm-heading-5 *, .cm-heading-6 *': {
+        textDecoration: 'inherit',
     },
 
     // Inline formatting
@@ -515,7 +533,7 @@ const baseTheme = EditorView.baseTheme({
     // Links
     '.cm-link': {
         color: 'var(--syntax-link)',
-        textDecoration: 'underline',
+        textDecoration: 'var(--link-underline, underline)',
         cursor: 'pointer',
     },
 
@@ -559,6 +577,12 @@ const baseTheme = EditorView.baseTheme({
         color: 'var(--syntax-list-marker)',
         fontWeight: 'bold',
     },
+    // Override defaultHighlightStyle color on formatting mark children  
+    // This makes inner spans inherit the muted color from their parent
+    '.cm-list-marker-source *, .cm-strong *, .cm-emphasis *, .cm-strikethrough *, .cm-code *': {
+        color: 'inherit !important',
+    },
+
 
     // Horizontal rules
     '.cm-horizontal-rule': {
