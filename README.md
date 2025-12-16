@@ -123,6 +123,7 @@ editorRef.current?.wrapSelection('**', '**');// Wrap selection
 
 | Guide | Description |
 |-------|-------------|
+| [AI Integration](docs/ai-integration.md) | AI streaming & replace patterns |
 | [Theming](docs/theming.md) | CSS variables, custom themes |
 | [Extensions](docs/extensions.md) | Creating custom syntax |
 | [Callouts](docs/callouts.md) | All callout types |
