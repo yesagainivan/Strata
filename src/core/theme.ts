@@ -474,6 +474,7 @@ const baseTheme = EditorView.baseTheme({
     '.cm-list-number': {
         color: 'var(--syntax-list-marker)',
         fontWeight: '600',
+        fontSize: '0.9em',
         display: 'inline-block',
         minWidth: '1.5em',
         textAlign: 'right',

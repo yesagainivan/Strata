@@ -7,50 +7,9 @@ import { useState, useRef, useMemo } from 'react';
 import { MarkdownEditor, createExtension, mathExtension, tableExtension, EditorErrorBoundary, createThemeStyles } from './index';
 import type { MarkdownEditorHandle, WikilinkData } from './types';
 import { THEME_PRESETS, getThemePreset, formatThemeCode } from './demo/themes';
+import DEMO_CONTENT from './demo/content.md?raw';
 import 'katex/dist/katex.min.css';
 import './App.css';
-
-// Demo content showcasing features
-const DEMO_CONTENT = `# Welcome to Strata
-
-A beautiful markdown editor with **live preview** and full theme customization.
-
-> [!tip] Try the Theme Selector
-> Use the dropdown in the toolbar to switch between preset themes. Click "Show Code" to see the StrataTheme configuration!
-
-## Features
-
-- **Rich Formatting** — Bold, *italic*, ~~strikethrough~~, ==highlight==
-- **Wikilinks** — [[Link to notes]] with Cmd/Ctrl+Click
-- **Tags** — Organize with #tags and #nested/tags
-- **Callouts** — Info, warning, tip, and more
-- **Math** — Inline $E = mc^2$ and block equations
-- **Tables** — Full markdown table support
-
-### Example Callouts
-
-> [!info] Information
-> Standard info callout with theme-aware styling.
-
-> [!warning] Warning
-> Callouts adapt to each theme's color palette.
-
-> [!success] Success
-> Everything is working as expected!
-
-### Code Blocks
-
-\`\`\`typescript
-const theme: StrataTheme = {
-  mode: 'dark',
-  colors: { background: '#1a1a2e' }
-};
-\`\`\`
-
----
-
-Try editing this content to see the WYSIWYG features in action!
-`;
 
 // @mention extension example
 const mentionExtension = createExtension({
