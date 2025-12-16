@@ -28,15 +28,16 @@ export const LIGHT_COLORS: StrataColors = {
 
 /**
  * Default dark mode core colors
+ * Refined neutral palette with subtle warmth
  */
 export const DARK_COLORS: StrataColors = {
-    background: '#1a1a1a',
-    foreground: '#e5e7eb',
-    selection: '#3b4252',
-    cursor: '#ffffff',
-    lineHighlight: '#252525',
-    gutterBackground: '#252525',
-    gutterForeground: '#6b7280',
+    background: '#16181c',
+    foreground: '#d8dce4',
+    selection: '#2a3548',
+    cursor: '#e8ecf0',
+    lineHighlight: '#1c1f24',
+    gutterBackground: '#1a1c20',
+    gutterForeground: '#5a6270',
 };
 
 /**
@@ -58,19 +59,20 @@ export const LIGHT_SYNTAX: SyntaxColors = {
 
 /**
  * Default dark mode syntax colors
+ * Softer, more balanced palette
  */
 export const DARK_SYNTAX: SyntaxColors = {
-    heading: '#f8fafc',
-    bold: '#f1f5f9',
-    italic: '#cbd5e1',
-    link: '#60a5fa',
-    code: '#fb7185',
-    codeBackground: '#292524',
-    blockquote: '#94a3b8',
-    listMarker: '#38bdf8',
-    highlightBackground: '#854d0e',
-    highlightText: '#fef9c3',
-    footnote: '#a78bfa',
+    heading: '#e8ecf4',
+    bold: '#dce0e8',
+    italic: '#a8b0c0',
+    link: '#6ea8dc',
+    code: '#e07888',
+    codeBackground: '#1e2228',
+    blockquote: '#8894a8',
+    listMarker: '#5898c8',
+    highlightBackground: '#785020',
+    highlightText: '#f8f0d0',
+    footnote: '#9888c8',
 };
 
 /**
@@ -85,12 +87,13 @@ export const LIGHT_ELEMENTS: ElementColors = {
 
 /**
  * Default dark mode element colors
+ * Refined with better contrast
  */
 export const DARK_ELEMENTS: ElementColors = {
-    wikilink: '#a78bfa',
-    wikilinkHover: '#c4b5fd',
-    tag: '#22d3ee',
-    tagBackground: '#164e63',
+    wikilink: '#9080c8',
+    wikilinkHover: '#a898d8',
+    tag: '#58a8b8',
+    tagBackground: '#1a3038',
 };
 
 /**
@@ -106,13 +109,14 @@ export const LIGHT_TABLES: TableColors = {
 
 /**
  * Default dark mode table colors
+ * Subtle contrast for readability
  */
 export const DARK_TABLES: TableColors = {
-    border: '#3f3f46',
-    headerBackground: '#27272a',
-    headerForeground: '#f4f4f5',
-    rowAltBackground: '#1f1f23',
-    rowHover: '#2e3440',
+    border: '#2a2e38',
+    headerBackground: '#1e2128',
+    headerForeground: '#d8dce4',
+    rowAltBackground: '#1a1d22',
+    rowHover: '#242830',
 };
 
 /**
@@ -133,18 +137,19 @@ export const LIGHT_CALLOUTS: CalloutConfig = {
 
 /**
  * Default dark mode callout colors
+ * Muted, professional palette with good contrast
  */
 export const DARK_CALLOUTS: CalloutConfig = {
-    info: { background: 'rgba(59, 130, 246, 0.15)', border: '#3b82f6', header: '#60a5fa' },
-    warning: { background: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', header: '#fbbf24' },
-    danger: { background: 'rgba(239, 68, 68, 0.15)', border: '#ef4444', header: '#f87171' },
-    success: { background: 'rgba(34, 197, 94, 0.15)', border: '#22c55e', header: '#4ade80' },
-    tip: { background: 'rgba(20, 184, 166, 0.15)', border: '#14b8a6', header: '#2dd4bf' },
-    note: { background: 'rgba(99, 102, 241, 0.15)', border: '#6366f1', header: '#a5b4fc' },
-    question: { background: 'rgba(139, 92, 246, 0.15)', border: '#8b5cf6', header: '#c4b5fd' },
-    quote: { background: 'rgba(100, 116, 139, 0.15)', border: '#64748b', header: '#94a3b8' },
-    example: { background: 'rgba(14, 165, 233, 0.15)', border: '#0ea5e9', header: '#38bdf8' },
-    bug: { background: 'rgba(239, 68, 68, 0.15)', border: '#ef4444', header: '#f87171' },
+    info: { background: 'rgba(80, 130, 180, 0.14)', border: '#4878a8', header: '#78a8d0' },
+    warning: { background: 'rgba(190, 140, 70, 0.14)', border: '#a88848', header: '#d0b078' },
+    danger: { background: 'rgba(180, 90, 90, 0.14)', border: '#a85858', header: '#d08888' },
+    success: { background: 'rgba(80, 150, 100, 0.14)', border: '#488858', header: '#78b888' },
+    tip: { background: 'rgba(70, 150, 140, 0.14)', border: '#408878', header: '#68b8a8' },
+    note: { background: 'rgba(100, 110, 170, 0.14)', border: '#585890', header: '#8898c8' },
+    question: { background: 'rgba(120, 100, 160, 0.14)', border: '#685898', header: '#9888c0' },
+    quote: { background: 'rgba(100, 110, 125, 0.12)', border: '#58606c', header: '#889098' },
+    example: { background: 'rgba(70, 140, 170, 0.14)', border: '#407898', header: '#68a8c8' },
+    bug: { background: 'rgba(170, 90, 90, 0.14)', border: '#985858', header: '#c88888' },
 };
 
 /**

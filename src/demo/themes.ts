@@ -61,16 +61,26 @@ export const THEME_PRESETS: ThemePreset[] = [
                 tagBackground: '#f0e9dd',
             },
             callouts: {
-                info: { background: 'rgba(107, 127, 108, 0.12)', border: '#739ca9ff', header: '#6e8a93ff' },
-                warning: { background: 'rgba(224, 186, 98, 0.15)', border: '#e0ba62', header: '#8b6914' },
-                danger: { background: 'rgba(168, 124, 124, 0.12)', border: '#a87c7c', header: '#7a4c4c' },
-                success: { background: 'rgba(107, 127, 108, 0.15)', border: '#6b7f6c', header: '#4a5c4b' },
-                tip: { background: 'rgba(107, 127, 108, 0.12)', border: '#6b7f6c', header: '#4a5c4b' },
-                note: { background: 'rgba(139, 90, 43, 0.12)', border: '#8b5a2b', header: '#6b4423' },
-                question: { background: 'rgba(107, 127, 108, 0.12)', border: '#6b7f6c', header: '#4a5c4b' },
-                quote: { background: 'rgba(140, 123, 112, 0.12)', border: '#8c7b70', header: '#6c5b50' },
-                example: { background: 'rgba(107, 127, 108, 0.12)', border: '#9c86b1ff', header: '#9f81bbff' },
-                bug: { background: 'rgba(168, 124, 124, 0.12)', border: '#a87c7c', header: '#7a4c4c' },
+                // Sage blue-green for informational
+                info: { background: 'rgba(95, 129, 120, 0.12)', border: '#5f8178', header: '#4a6860' },
+                // Warm amber for warnings
+                warning: { background: 'rgba(198, 155, 85, 0.15)', border: '#c69b55', header: '#8a6d30' },
+                // Terracotta for danger
+                danger: { background: 'rgba(175, 110, 95, 0.14)', border: '#af6e5f', header: '#8b4f40' },
+                // Forest green for success
+                success: { background: 'rgba(95, 130, 95, 0.14)', border: '#5f825f', header: '#4a6a4a' },
+                // Light sage for tips
+                tip: { background: 'rgba(107, 140, 115, 0.12)', border: '#6b8c73', header: '#4d6b54' },
+                // Warm brown for notes
+                note: { background: 'rgba(139, 110, 80, 0.12)', border: '#8b6e50', header: '#6b5038' },
+                // Muted teal for questions
+                question: { background: 'rgba(100, 130, 125, 0.12)', border: '#64827d', header: '#4a6560' },
+                // Warm gray-brown for quotes
+                quote: { background: 'rgba(130, 115, 100, 0.10)', border: '#827364', header: '#635850' },
+                // Olive for examples
+                example: { background: 'rgba(120, 125, 90, 0.12)', border: '#787d5a', header: '#5a5f40' },
+                // Dusty rose for bugs
+                bug: { background: 'rgba(155, 100, 100, 0.12)', border: '#9b6464', header: '#7a4848' },
             },
             tables: {
                 border: '#d6cebf',
@@ -84,144 +94,186 @@ export const THEME_PRESETS: ThemePreset[] = [
     {
         id: 'moss-dark',
         name: 'Moss Dark',
-        description: 'Earthy dark palette',
+        description: 'Deep forest after dusk',
         theme: {
             mode: 'dark',
             colors: {
-                background: '#1c1a19',
-                foreground: '#e8e4dc',
-                selection: '#3d4f3d',
-                cursor: '#e8e4dc',
-                lineHighlight: '#262322',
-                gutterBackground: '#262322',
-                gutterForeground: '#a89b90',
+                background: '#1a1c1a',
+                foreground: '#d8d4cc',
+                selection: '#3a4a3a',
+                cursor: '#a8b8a0',
+                lineHighlight: '#222422',
+                gutterBackground: '#1e201e',
+                gutterForeground: '#6a7068',
             },
             syntax: {
-                heading: '#c8d4c8',
-                bold: '#e8e4dc',
-                italic: '#a89b90',
-                link: '#8a9b8b',
-                code: '#d4a373',
-                codeBackground: '#2a2420',
-                blockquote: '#a89b90',
-                listMarker: '#8a9b8b',
+                heading: '#b8c8b0',
+                bold: '#d8d4cc',
+                italic: '#9a9890',
+                link: '#88a088',
+                code: '#c8a878',
+                codeBackground: '#262826',
+                blockquote: '#808078',
+                listMarker: '#88a088',
             },
             elements: {
-                wikilink: '#8a9b8b',
-                wikilinkHover: '#a8b8a8',
-                tag: '#d4a373',
-                tagBackground: '#3d3632',
+                wikilink: '#88a088',
+                wikilinkHover: '#a0b8a0',
+                tag: '#c8a878',
+                tagBackground: '#2e302c',
             },
             callouts: {
-                info: { background: 'rgba(138, 155, 139, 0.15)', border: '#739ca9ff', header: '#82aebbff' },
-                warning: { background: 'rgba(212, 163, 115, 0.15)', border: '#d4a373', header: '#e4b383' },
-                danger: { background: 'rgba(168, 124, 124, 0.15)', border: '#a87c7c', header: '#c89c9c' },
-                success: { background: 'rgba(138, 155, 139, 0.15)', border: '#8a9b8b', header: '#a8b8a8' },
-                tip: { background: 'rgba(138, 155, 139, 0.15)', border: '#8a9b8b', header: '#a8b8a8' },
-                note: { background: 'rgba(212, 163, 115, 0.15)', border: '#d4a373', header: '#e4b383' },
-                question: { background: 'rgba(138, 155, 139, 0.15)', border: '#8a9b8b', header: '#a8b8a8' },
-                quote: { background: 'rgba(168, 155, 144, 0.15)', border: '#a89b90', header: '#c8bbb0' },
-                example: { background: 'rgba(138, 155, 139, 0.15)', border: '#9c86b1ff', header: '#9f81bbff' },
-                bug: { background: 'rgba(168, 124, 124, 0.15)', border: '#a87c7c', header: '#c89c9c' },
+                // Muted sage for info
+                info: { background: 'rgba(120, 145, 130, 0.15)', border: '#6a8070', header: '#90a898' },
+                // Warm amber
+                warning: { background: 'rgba(180, 145, 90, 0.15)', border: '#a08050', header: '#c8a870' },
+                // Muted terracotta
+                danger: { background: 'rgba(160, 100, 90, 0.15)', border: '#986860', header: '#b88880' },
+                // Forest green
+                success: { background: 'rgba(100, 135, 100, 0.15)', border: '#608060', header: '#88a888' },
+                // Sage
+                tip: { background: 'rgba(110, 140, 115, 0.14)', border: '#688868', header: '#90a890' },
+                // Warm brown
+                note: { background: 'rgba(150, 120, 90, 0.14)', border: '#907058', header: '#b89878' },
+                // Muted teal
+                question: { background: 'rgba(100, 130, 125, 0.14)', border: '#607870', header: '#88a8a0' },
+                // Warm gray
+                quote: { background: 'rgba(120, 115, 105, 0.12)', border: '#706860', header: '#989088' },
+                // Olive
+                example: { background: 'rgba(115, 125, 90, 0.14)', border: '#687050', header: '#909870' },
+                // Dusty rose
+                bug: { background: 'rgba(150, 100, 100, 0.14)', border: '#886060', header: '#a88888' },
             },
             tables: {
-                border: '#3d3632',
-                headerBackground: '#262322',
-                headerForeground: '#e8e4dc',
-                rowAltBackground: '#2a2624',
-                rowHover: '#36302c',
+                border: '#363836',
+                headerBackground: '#262826',
+                headerForeground: '#d8d4cc',
+                rowAltBackground: '#222422',
+                rowHover: '#2e302e',
             },
         },
     },
     {
         id: 'ocean',
         name: 'Ocean',
-        description: 'Cool blue tones, desaturated and darker',
+        description: 'Deep sea midnight',
         theme: {
             mode: 'dark',
             colors: {
-                background: '#0e151cff',
-                foreground: '#c0c8d0',
-                selection: '#1a3149bb',
-                cursor: '#4a90c0',
-                lineHighlight: '#0e1820',
-                gutterBackground: '#0e1820',
-                gutterForeground: '#4a6078',
+                background: '#0c1218',
+                foreground: '#b8c4d0',
+                selection: '#1e3048',
+                cursor: '#5898c8',
+                lineHighlight: '#101820',
+                gutterBackground: '#0e1418',
+                gutterForeground: '#4a5868',
             },
             syntax: {
-                heading: '#60a0c0',
-                bold: '#c0c8d0',
-                italic: '#8098b0',
-                link: '#4a90c0',
-                code: '#6090b0',
-                codeBackground: '#102030',
-                blockquote: '#506880',
-                listMarker: '#4a90c0',
+                heading: '#7ab0d0',
+                bold: '#b8c4d0',
+                italic: '#7890a8',
+                link: '#5898c8',
+                code: '#6898b8',
+                codeBackground: '#141c24',
+                blockquote: '#586878',
+                listMarker: '#5898c8',
             },
             elements: {
-                wikilink: '#4a90c0',
-                wikilinkHover: '#60a0c0',
-                tag: '#307090',
-                tagBackground: '#183040',
+                wikilink: '#5898c8',
+                wikilinkHover: '#78b0d8',
+                tag: '#4080a0',
+                tagBackground: '#182838',
             },
             callouts: {
-                info: { background: 'rgba(74, 144, 192, 0.15)', border: '#4a90c0', header: '#60a0c0' },
-                warning: { background: 'rgba(192, 144, 74, 0.15)', border: '#c0904a', header: '#d0a060' },
-                danger: { background: 'rgba(192, 74, 74, 0.15)', border: '#c04a4a', header: '#d06060' },
-                success: { background: 'rgba(74, 192, 74, 0.15)', border: '#4ac04a', header: '#60d060' },
-                tip: { background: 'rgba(74, 144, 192, 0.15)', border: '#4a90c0', header: '#60a0c0' },
-                note: { background: 'rgba(192, 144, 74, 0.15)', border: '#c0904a', header: '#d0a060' },
-                question: { background: 'rgba(74, 144, 192, 0.15)', border: '#4a90c0', header: '#60a0c0' },
-                quote: { background: 'rgba(80, 104, 128, 0.15)', border: '#506880', header: '#607890' },
-                example: { background: 'rgba(128, 80, 192, 0.15)', border: '#8050c0', header: '#9060d0' },
-                bug: { background: 'rgba(192, 74, 74, 0.15)', border: '#c04a4a', header: '#d06060' },
+                // Steel blue for info
+                info: { background: 'rgba(80, 130, 170, 0.14)', border: '#4878a0', header: '#6898c0' },
+                // Muted gold
+                warning: { background: 'rgba(170, 140, 90, 0.14)', border: '#988858', header: '#b8a878' },
+                // Coral red (muted)
+                danger: { background: 'rgba(160, 90, 90, 0.14)', border: '#905858', header: '#b07878' },
+                // Sea green
+                success: { background: 'rgba(80, 140, 120, 0.14)', border: '#488868', header: '#68a890' },
+                // Light steel
+                tip: { background: 'rgba(90, 130, 160, 0.12)', border: '#507898', header: '#7098b8' },
+                // Sandy brown
+                note: { background: 'rgba(160, 130, 100, 0.12)', border: '#907858', header: '#a89878' },
+                // Cyan-gray
+                question: { background: 'rgba(90, 130, 150, 0.14)', border: '#5080a0', header: '#70a0c0' },
+                // Slate
+                quote: { background: 'rgba(100, 115, 130, 0.12)', border: '#586878', header: '#788898' },
+                // Purple-gray
+                example: { background: 'rgba(110, 100, 140, 0.14)', border: '#605878', header: '#8078a0' },
+                // Rust
+                bug: { background: 'rgba(150, 90, 90, 0.14)', border: '#885858', header: '#a87878' },
             },
             tables: {
-                border: '#1c3550',
-                headerBackground: '#102030',
-                headerForeground: '#c0c8d0',
-                rowAltBackground: '#0b1218',
-                rowHover: '#152535',
+                border: '#1c2838',
+                headerBackground: '#141c24',
+                headerForeground: '#b8c4d0',
+                rowAltBackground: '#101820',
+                rowHover: '#182430',
             },
         },
     },
     {
         id: 'sunset',
         name: 'Sunset',
-        description: 'Warm orange and pink',
+        description: 'Warm dusk ambiance',
         theme: {
             mode: 'dark',
             colors: {
-                background: '#1a1215',
-                foreground: '#f0e6e8',
-                selection: '#4a2a35',
-                cursor: '#ff9a76',
-                lineHighlight: '#221a1d',
-                gutterBackground: '#15101 2',
-                gutterForeground: '#8a6a70',
+                background: '#181415',
+                foreground: '#dcd4d6',
+                selection: '#3a2830',
+                cursor: '#d89080',
+                lineHighlight: '#1e1a1c',
+                gutterBackground: '#161214',
+                gutterForeground: '#786468',
             },
             syntax: {
-                heading: '#ffb09a',
-                bold: '#f0e6e8',
-                italic: '#d4a8b0',
-                link: '#ff9a76',
-                code: '#e88a6a',
-                codeBackground: '#2a1a1f',
-                blockquote: '#b08890',
-                listMarker: '#ff9a76',
+                heading: '#d8a898',
+                bold: '#dcd4d6',
+                italic: '#a89098',
+                link: '#c88878',
+                code: '#c89080',
+                codeBackground: '#221c1e',
+                blockquote: '#887078',
+                listMarker: '#c88878',
             },
             elements: {
-                wikilink: '#ff9a76',
-                wikilinkHover: '#ffb090',
-                tag: '#e07858',
-                tagBackground: '#3a2025',
+                wikilink: '#c88878',
+                wikilinkHover: '#d8a090',
+                tag: '#b87868',
+                tagBackground: '#2a2024',
+            },
+            callouts: {
+                // Dusty rose for info
+                info: { background: 'rgba(170, 120, 130, 0.14)', border: '#987078', header: '#b89098' },
+                // Warm amber
+                warning: { background: 'rgba(180, 140, 100, 0.14)', border: '#a88058', header: '#c8a080' },
+                // Soft coral
+                danger: { background: 'rgba(170, 100, 95, 0.14)', border: '#a06058', header: '#c08078' },
+                // Sage green
+                success: { background: 'rgba(120, 140, 115, 0.14)', border: '#708068', header: '#90a088' },
+                // Peach
+                tip: { background: 'rgba(180, 130, 120, 0.12)', border: '#a07868', header: '#c09888' },
+                // Warm taupe
+                note: { background: 'rgba(150, 125, 115, 0.14)', border: '#887068', header: '#a89088' },
+                // Mauve
+                question: { background: 'rgba(140, 115, 130, 0.14)', border: '#806878', header: '#a08898' },
+                // Warm gray
+                quote: { background: 'rgba(130, 115, 115, 0.12)', border: '#706060', header: '#908080' },
+                // Olive brown
+                example: { background: 'rgba(140, 125, 100, 0.14)', border: '#807050', header: '#a09070' },
+                // Deep coral
+                bug: { background: 'rgba(160, 95, 95, 0.14)', border: '#905858', header: '#b08080' },
             },
             tables: {
-                border: '#4a2a35',
-                headerBackground: '#2a1a1f',
-                headerForeground: '#f0e6e8',
-                rowAltBackground: '#221518',
-                rowHover: '#382025',
+                border: '#322428',
+                headerBackground: '#221c1e',
+                headerForeground: '#dcd4d6',
+                rowAltBackground: '#1e1a1c',
+                rowHover: '#2a2226',
             },
         },
     },
