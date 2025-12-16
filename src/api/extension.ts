@@ -30,21 +30,85 @@ export interface CustomExtensionConfig {
     onClick?: (match: RegExpMatchArray, event: MouseEvent) => void;
     /** Whether to hide the raw syntax when cursor is not on the line */
     hideOnInactive?: boolean;
+
+    // === NEW OPTIONS ===
+
+    /**
+     * Estimated height in pixels for viewport calculations.
+     * Improves scroll performance for large widgets.
+     * @default 20
+     */
+    estimatedHeight?: number;
+
+    /**
+     * Whether this creates a block-level decoration (takes full line).
+     * Use for multi-line elements like callouts or previews.
+     * @default false
+     */
+    isBlock?: boolean;
+
+    /**
+     * CSS class to apply to the entire line containing a match.
+     * Useful for styling the line background or adding indicators.
+     */
+    lineClass?: string;
+
+    /**
+     * Lifecycle hook called when widget DOM is created.
+     * Use for attaching event listeners or initializing state.
+     */
+    onMount?: (element: HTMLElement, match: RegExpMatchArray) => void;
+
+    /**
+     * Lifecycle hook called when widget is removed from DOM.
+     * Use for cleanup (remove listeners, cancel requests, etc.)
+     */
+    onDestroy?: (element: HTMLElement) => void;
 }
 
 /**
- * Widget wrapper for user-defined widgets
+ * Widget wrapper for user-defined widgets with lifecycle support
  */
 class CustomWidget extends WidgetType {
+    private mountedElement: HTMLElement | null = null;
+
     constructor(
         private element: HTMLElement,
-        private id: string
+        private id: string,
+        private estimatedHeightValue: number,
+        private isBlock: boolean,
+        private match: RegExpMatchArray,
+        private onMount?: (el: HTMLElement, match: RegExpMatchArray) => void,
+        private onDestroyCallback?: (el: HTMLElement) => void
     ) {
         super();
     }
 
+    /**
+     * Estimated height for CodeMirror viewport calculations
+     */
+    get estimatedHeight(): number {
+        return this.estimatedHeightValue;
+    }
+
     toDOM(): HTMLElement {
-        return this.element.cloneNode(true) as HTMLElement;
+        const el = this.element.cloneNode(true) as HTMLElement;
+        this.mountedElement = el;
+
+        // Call onMount lifecycle hook
+        if (this.onMount) {
+            this.onMount(el, this.match);
+        }
+
+        return el;
+    }
+
+    destroy(): void {
+        // Call onDestroy lifecycle hook
+        if (this.onDestroyCallback && this.mountedElement) {
+            this.onDestroyCallback(this.mountedElement);
+        }
+        this.mountedElement = null;
     }
 
     eq(other: CustomWidget): boolean {
@@ -84,7 +148,7 @@ function buildCustomDecorations(
     view: EditorView,
     config: CustomExtensionConfig
 ): DecorationSet {
-    const builder = new RangeSetBuilder<Decoration>();
+    const decos: Array<{ from: number; to: number; deco: Decoration }> = [];
     const doc = view.state.doc;
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 
@@ -102,29 +166,56 @@ function buildCustomDecorations(
             const matchLine = doc.lineAt(matchFrom).number;
             const isActiveLine = matchLine === cursorLine;
 
+            // Add line decoration if lineClass is specified
+            if (config.lineClass) {
+                const line = doc.lineAt(matchFrom);
+                decos.push({
+                    from: line.from,
+                    to: line.from,
+                    deco: Decoration.line({ class: config.lineClass }),
+                });
+            }
+
             // If hideOnInactive is true and cursor is not on line, use widget/replace decoration
             if (config.hideOnInactive && !isActiveLine && config.widget) {
                 const element = config.widget(match, matchFrom, matchTo);
                 element.className = `${element.className || ''} ${config.className || ''}`.trim();
 
-                builder.add(
-                    matchFrom,
-                    matchTo,
-                    Decoration.replace({
-                        widget: new CustomWidget(element, `${config.name}-${matchFrom}`),
-                    })
+                const widget = new CustomWidget(
+                    element,
+                    `${config.name}-${matchFrom}`,
+                    config.estimatedHeight ?? 20,
+                    config.isBlock ?? false,
+                    match,
+                    config.onMount,
+                    config.onDestroy
                 );
+
+                decos.push({
+                    from: matchFrom,
+                    to: matchTo,
+                    deco: config.isBlock
+                        ? Decoration.replace({ widget, block: true })
+                        : Decoration.replace({ widget }),
+                });
             } else if (config.className) {
                 // Apply mark decoration with class
-                builder.add(
-                    matchFrom,
-                    matchTo,
-                    Decoration.mark({ class: config.className })
-                );
+                decos.push({
+                    from: matchFrom,
+                    to: matchTo,
+                    deco: Decoration.mark({ class: config.className }),
+                });
             }
         }
     }
 
+    // Sort decorations by position (required for RangeSetBuilder)
+    decos.sort((a, b) => a.from - b.from || a.to - b.to);
+
+    const builder = new RangeSetBuilder<Decoration>();
+    for (const { from, to, deco } of decos) {
+        builder.add(from, to, deco);
+    }
     return builder.finish();
 }
 
@@ -191,7 +282,7 @@ function createCustomClickHandler(config: CustomExtensionConfig): Extension {
  * 
  * @example
  * ```ts
- * // Create a @mention extension
+ * // Simple @mention extension
  * const mentions = createExtension({
  *   name: 'mention',
  *   pattern: /@(\w+)/g,
@@ -199,8 +290,25 @@ function createCustomClickHandler(config: CustomExtensionConfig): Extension {
  *   onClick: (match) => console.log('Clicked user:', match[1]),
  * });
  * 
+ * // Block widget with lifecycle hooks
+ * const embeds = createExtension({
+ *   name: 'embed',
+ *   pattern: /::embed\[([^\]]+)\]/g,
+ *   hideOnInactive: true,
+ *   isBlock: true,
+ *   estimatedHeight: 200,
+ *   lineClass: 'cm-embed-line',
+ *   widget: (match) => {
+ *     const el = document.createElement('iframe');
+ *     el.src = match[1];
+ *     return el;
+ *   },
+ *   onMount: (el) => console.log('Embed mounted'),
+ *   onDestroy: (el) => console.log('Embed destroyed'),
+ * });
+ * 
  * // Use in editor
- * <MarkdownEditor extensions={[mentions]} />
+ * <MarkdownEditor extensions={[mentions, embeds]} />
  * ```
  */
 export function createExtension(config: CustomExtensionConfig): Extension {
