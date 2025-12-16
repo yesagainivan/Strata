@@ -4,7 +4,7 @@
  * Uses EditorView.decorations.compute() for block decorations
  */
 
-import { Extension, RangeSetBuilder } from '@codemirror/state';
+import { Extension, RangeSetBuilder, StateField } from '@codemirror/state';
 import {
     Decoration,
     DecorationSet,
@@ -264,6 +264,17 @@ class TableWidget extends WidgetType {
         super();
     }
 
+    /**
+     * Estimated height for CodeMirror viewport calculations
+     * This helps prevent scroll "gaps" by giving CM6 a height estimate
+     * before the widget is actually rendered
+     */
+    get estimatedHeight(): number {
+        // Header (1) + separator (1) + body rows, ~32px per row + 16px padding
+        const rowCount = 2 + this.table.bodyRows.length;
+        return rowCount * 32 + 16;
+    }
+
     toDOM(): HTMLElement {
         const wrapper = document.createElement('div');
         wrapper.className = 'cm-table-widget';
@@ -317,21 +328,36 @@ class TableWidget extends WidgetType {
 
 
 /**
- * Computed decorations for tables - uses compute() for block widget support with view access
- * Unlike ViewPlugin, compute() supports block decorations while still having view access
+ * StateField to cache table positions - only re-parses on document changes
+ * This avoids full document scans on every selection change
+ */
+const tableCache = StateField.define<TableBlock[]>({
+    create(state) {
+        return findTablesInRange(state.doc, 1, state.doc.lines);
+    },
+    update(tables, tr) {
+        if (!tr.docChanged) {
+            return tables; // Return cached tables if document hasn't changed
+        }
+        // Re-parse tables only when document changes
+        return findTablesInRange(tr.state.doc, 1, tr.state.doc.lines);
+    },
+});
+
+/**
+ * Computed decorations for tables - uses cached table positions
+ * Only creates decorations based on cursor position, doesn't re-scan entire doc
  */
 const tableDecorations = EditorView.decorations.compute(
-    ['doc', 'selection'],
+    [tableCache, 'selection'],
     (state) => {
-        // Note: compute() doesn't have direct view access, so we fall back to full doc scan
-        // This is a CM6 limitation for block decorations
         const doc = state.doc;
         const cursorPos = state.selection.main.head;
 
-        const allDecos: { from: number; to: number; deco: Decoration }[] = [];
+        // Use cached table positions instead of rescanning entire document
+        const tables = state.field(tableCache);
 
-        // Scan entire document for tables (required for block decorations)
-        const tables = findTablesInRange(doc, 1, doc.lines);
+        const allDecos: { from: number; to: number; deco: Decoration }[] = [];
 
         for (const table of tables) {
             const isEditing = cursorPos >= table.from && cursorPos <= table.to;
@@ -430,6 +456,6 @@ const tableTheme = EditorView.baseTheme({
  * Table extension with Obsidian-style rendering
  */
 export function tableExtension(): Extension {
-    return [tableDecorations, tableTheme];
+    return [tableCache, tableDecorations, tableTheme];
 }
 
