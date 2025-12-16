@@ -161,14 +161,28 @@ function buildWikilinkDecorations(view: EditorView): DecorationSet {
 const wikilinkPlugin = ViewPlugin.fromClass(
     class {
         decorations: DecorationSet;
+        lastCursorLine: number;
 
         constructor(view: EditorView) {
             this.decorations = buildWikilinkDecorations(view);
+            this.lastCursorLine = view.state.doc.lineAt(view.state.selection.main.head).number;
         }
 
         update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+            if (update.docChanged || update.viewportChanged) {
                 this.decorations = buildWikilinkDecorations(update.view);
+                this.lastCursorLine = update.view.state.doc.lineAt(
+                    update.view.state.selection.main.head
+                ).number;
+            } else if (update.selectionSet) {
+                // Only rebuild if cursor moved to a different line
+                const newLine = update.view.state.doc.lineAt(
+                    update.view.state.selection.main.head
+                ).number;
+                if (newLine !== this.lastCursorLine) {
+                    this.decorations = buildWikilinkDecorations(update.view);
+                    this.lastCursorLine = newLine;
+                }
             }
         }
     },
