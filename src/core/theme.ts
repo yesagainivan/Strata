@@ -322,6 +322,10 @@ const baseTheme = EditorView.baseTheme({
         fontSize: 'var(--editor-font-size, 16px)',
         lineHeight: 'var(--editor-line-height, 1.6)',
         overflow: 'auto',
+        // Chrome 102+ bug workaround: scroll can stutter/pause when mouse is stationary
+        // because Chrome's hit-testing fails to target the scroll container correctly.
+        // See: https://discuss.codemirror.net/t/solved-scrolling-stops-if-mouse-doesnt-move/6761
+        pointerEvents: 'auto',
     },
     '.cm-content': {
         padding: 'var(--editor-content-padding, 16px)',
