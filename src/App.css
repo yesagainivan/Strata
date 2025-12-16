@@ -385,3 +385,7 @@ body,
     display: none;
   }
 }
+
+.cm-scroller {
+  pointer-events: auto;
+}

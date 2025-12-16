@@ -116,6 +116,14 @@ class OrderedListWidget extends WidgetType {
  * Horizontal rule widget for visual separator
  */
 class HorizontalRuleWidget extends WidgetType {
+    /**
+     * Estimated height for CodeMirror viewport calculations.
+     * HR has fixed height with margin.
+     */
+    get estimatedHeight(): number {
+        return 24; // 1px line + 12px margin top/bottom
+    }
+
     toDOM(): HTMLElement {
         const hr = document.createElement('div');
         hr.className = 'cm-horizontal-rule';

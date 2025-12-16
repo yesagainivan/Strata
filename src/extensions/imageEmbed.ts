@@ -54,6 +54,17 @@ class ImageEmbedWidget extends WidgetType {
         super();
     }
 
+    /**
+     * Estimated height for CodeMirror viewport calculations.
+     * This helps prevent scroll "gaps" by giving CM6 a height estimate
+     * before the image is actually loaded and rendered.
+     */
+    get estimatedHeight(): number {
+        // Default image height estimate (max-height in CSS is 300px)
+        // Using 150px as a reasonable middle estimate
+        return 150;
+    }
+
     toDOM(): HTMLElement {
         const container = document.createElement('span');
         container.className = 'cm-image-embed';
