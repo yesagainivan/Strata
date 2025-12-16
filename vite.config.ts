@@ -3,19 +3,26 @@ import react from '@vitejs/plugin-react'
 import dts from 'vite-plugin-dts'
 import { resolve } from 'path'
 
+// Check if building library or demo
+const isLibBuild = process.env.BUILD_MODE === 'lib'
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    dts({
-      include: ['src/**/*.ts', 'src/**/*.tsx'],
-      exclude: ['src/demo/**', 'src/App.tsx', 'src/main.tsx', 'src/**/*.test.ts'],
-      rollupTypes: true,
-      tsconfigPath: './tsconfig.app.json',
-    }),
+    // Only include dts plugin for library builds
+    ...(isLibBuild ? [
+      dts({
+        include: ['src/**/*.ts', 'src/**/*.tsx'],
+        exclude: ['src/demo/**', 'src/App.tsx', 'src/main.tsx', 'src/**/*.test.ts'],
+        rollupTypes: true,
+        tsconfigPath: './tsconfig.app.json',
+      }),
+    ] : []),
   ],
   base: './', // For GitHub Pages demo
-  build: {
+  build: isLibBuild ? {
+    // Library build configuration
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'StrataEditor',
@@ -23,7 +30,6 @@ export default defineConfig({
       fileName: (format) => `strata-editor.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
-      // Externalize deps that shouldn't be bundled
       external: ['react', 'react-dom', 'react/jsx-runtime'],
       output: {
         globals: {
@@ -33,9 +39,11 @@ export default defineConfig({
         },
       },
     },
-    // Generate sourcemaps for debugging
     sourcemap: true,
-    // Don't minify library - consumers will minify
     minify: false,
+  } : {
+    // Demo app build configuration (for GitHub Pages)
+    outDir: 'dist',
+    sourcemap: false,
   },
 })
