@@ -45,6 +45,23 @@ export const readOnlyCompartment = new Compartment();
 
 /**
  * Create a fully configured CodeMirror 6 editor
+ * 
+ * @param parent - The DOM element to mount the editor into
+ * @param config - Editor configuration options
+ * @returns EditorView instance
+ * 
+ * @important **Cleanup Required**: When unmounting the editor, you MUST call
+ * `destroyEditor(view)` or `view.destroy()` to properly dispose of the editor
+ * and prevent memory leaks. This removes event listeners and cleans up DOM.
+ * 
+ * @example
+ * ```ts
+ * // Create editor
+ * const view = createEditor(containerEl, { doc: 'Hello' });
+ * 
+ * // Later, when unmounting:
+ * destroyEditor(view);
+ * ```
  */
 export function createEditor(parent: HTMLElement, config: EditorConfig = {}): EditorView {
     const {
@@ -123,3 +140,16 @@ export function updateReadOnly(view: EditorView, readOnly: boolean): void {
         effects: readOnlyCompartment.reconfigure(EditorState.readOnly.of(readOnly)),
     });
 }
+
+/**
+ * Destroy an editor instance and clean up resources
+ * 
+ * This must be called when unmounting the editor to prevent memory leaks.
+ * It removes all event listeners and cleans up the DOM.
+ * 
+ * @param view - The EditorView instance to destroy
+ */
+export function destroyEditor(view: EditorView): void {
+    view.destroy();
+}
+

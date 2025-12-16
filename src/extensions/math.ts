@@ -90,11 +90,15 @@ class MathWidget extends WidgetType {
      * Estimated height for CodeMirror viewport calculations.
      * This helps prevent scroll "gaps" by giving CM6 a height estimate
      * before the math is actually rendered by KaTeX.
+     * 
+     * Based on real measurements:
+     * - Block math: ~112px total (56px content + padding/margin from CSS)
+     * - Inline math: ~20px (constrained by line height)
      */
     get estimatedHeight(): number {
-        // Block math typically takes more vertical space
-        // Inline math is roughly one line height
-        return this.isBlock ? 40 : 20;
+        // Block math: Based on measurement, actual rendered height is ~112px
+        // Using 100px as a slightly conservative estimate
+        return this.isBlock ? 100 : 20;
     }
 
     toDOM(): HTMLElement {

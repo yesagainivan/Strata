@@ -42,7 +42,7 @@ export { createExtension, createExtensions } from './api/extension';
 export type { CustomExtensionConfig } from './api/extension';
 
 // Core utilities (for advanced users)
-export { createEditor, updateReadOnly } from './core/editor';
+export { createEditor, updateReadOnly, destroyEditor } from './core/editor';
 export {
     createEditorTheme,
     createThemeStyles,

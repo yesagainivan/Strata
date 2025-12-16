@@ -13,6 +13,7 @@ import {
     WidgetType,
 } from '@codemirror/view';
 import { syntaxTree } from '@codemirror/language';
+import { CodeRange, isInsideCode } from '../utils';
 
 /**
  * Decoration for hidden marks (like ** for bold)
@@ -307,41 +308,8 @@ interface DecoEntry {
     deco: Decoration;
 }
 
-/**
- * Range that should be excluded from regex-based decorations (code blocks, inline code)
- */
-interface ExcludedRange {
-    from: number;
-    to: number;
-}
-
-/**
- * Collect ranges of code nodes from the syntax tree.
- * These ranges should be excluded from regex-based decoration scanning.
- */
-function collectCodeRanges(view: EditorView): ExcludedRange[] {
-    const ranges: ExcludedRange[] = [];
-
-    for (const { from, to } of view.visibleRanges) {
-        syntaxTree(view.state).iterate({
-            from,
-            to,
-            enter(node) {
-                // Exclude inline code, fenced code blocks, and code text
-                if (
-                    node.name === 'InlineCode' ||
-                    node.name === 'FencedCode' ||
-                    node.name === 'CodeBlock' ||
-                    node.name === 'CodeText'
-                ) {
-                    ranges.push({ from: node.from, to: node.to });
-                }
-            },
-        });
-    }
-
-    return ranges;
-}
+// Code ranges are now collected during the main tree walk
+// to avoid double iteration. Uses CodeRange from ../utils.
 
 
 /**
@@ -352,7 +320,7 @@ function collectCodeRanges(view: EditorView): ExcludedRange[] {
 function maskCodeSections(
     lineText: string,
     lineFrom: number,
-    codeRanges: ExcludedRange[]
+    codeRanges: CodeRange[]
 ): string {
     let masked = lineText;
 
@@ -385,14 +353,24 @@ function buildDecorations(view: EditorView): DecorationSet {
     // Get the line containing the cursor
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 
-    // Collect code ranges to exclude from regex-based decorations
-    const codeRanges = collectCodeRanges(view);
+    // Collect code ranges during the main tree walk (single iteration optimization)
+    const codeRanges: CodeRange[] = [];
 
     for (const { from, to } of view.visibleRanges) {
         syntaxTree(view.state).iterate({
             from,
             to,
             enter(node) {
+                // Collect code ranges during the same iteration
+                if (
+                    node.name === 'InlineCode' ||
+                    node.name === 'FencedCode' ||
+                    node.name === 'CodeBlock' ||
+                    node.name === 'CodeText'
+                ) {
+                    codeRanges.push({ from: node.from, to: node.to });
+                }
+
                 const nodeLine = doc.lineAt(node.from).number;
                 const isActiveLine = nodeLine === cursorLine;
 

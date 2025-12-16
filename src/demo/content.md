@@ -96,6 +96,22 @@ $$\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$$
 
 $$\int_{0}^{\infty} e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$
 
+More complex equations for scroll testing:
+
+$$\int_{-\infty}^{\infty} \frac{1}{\sqrt{2\pi\sigma^2}} e^{-\frac{(x-\mu)^2}{2\sigma^2}} dx = 1$$
+
+$$\mathbf{F} = m\mathbf{a} = m\frac{d^2\mathbf{x}}{dt^2}$$
+
+---
+
+## 🖼️ Images
+
+Strata supports embedded images with Obsidian syntax:
+
+![[https://generative-placeholders.stefanbohacek.com/image?width=300&height=300&style=cellular-automata&cells=4]]
+
+![[https://generative-placeholders.stefanbohacek.com/image?width=300&height=300&style=triangles&gap=300]]
+
 ---
 
 ## 📊 Tables
