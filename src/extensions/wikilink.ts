@@ -114,6 +114,45 @@ class WikilinkWidget extends WidgetType {
 const wikilinkMark = Decoration.mark({ class: 'cm-wikilink-source' });
 
 /**
+ * Collect code ranges from the syntax tree (for exclusion from decorations)
+ */
+function collectCodeRanges(view: EditorView): { from: number; to: number }[] {
+    const ranges: { from: number; to: number }[] = [];
+    const tree = syntaxTree(view.state);
+
+    for (const { from, to } of view.visibleRanges) {
+        tree.iterate({
+            from,
+            to,
+            enter(node) {
+                if (
+                    node.name === 'InlineCode' ||
+                    node.name === 'FencedCode' ||
+                    node.name === 'CodeBlock' ||
+                    node.name === 'CodeText'
+                ) {
+                    ranges.push({ from: node.from, to: node.to });
+                }
+            },
+        });
+    }
+
+    return ranges;
+}
+
+/**
+ * Check if a position range overlaps with any code range
+ */
+function isInsideCode(from: number, to: number, codeRanges: { from: number; to: number }[]): boolean {
+    for (const range of codeRanges) {
+        if (from < range.to && to > range.from) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Build decorations for wikilinks
  */
 function buildWikilinkDecorations(view: EditorView): DecorationSet {
@@ -121,31 +160,16 @@ function buildWikilinkDecorations(view: EditorView): DecorationSet {
     const doc = view.state.doc;
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 
+    // Pre-collect code ranges once (O(n) instead of O(n²))
+    const codeRanges = collectCodeRanges(view);
+
     for (const { from, to } of view.visibleRanges) {
         const text = doc.sliceString(from, to);
         const matches = parseWikilinks(text, from);
 
         for (const match of matches) {
-            // Check if match is inside a code block
-            const tree = syntaxTree(view.state);
-            let isCode = false;
-            tree.iterate({
-                from: match.from,
-                to: match.to,
-                enter: (node) => {
-                    if (
-                        node.name === 'InlineCode' ||
-                        node.name === 'FencedCode' ||
-                        node.name === 'CodeBlock' ||
-                        node.name === 'CodeText'
-                    ) {
-                        isCode = true;
-                        return false;
-                    }
-                },
-            });
-
-            if (isCode) continue;
+            // Simple range check instead of tree iteration per match
+            if (isInsideCode(match.from, match.to, codeRanges)) continue;
 
             const matchLine = doc.lineAt(match.from).number;
             const isActiveLine = matchLine === cursorLine;

@@ -11,6 +11,7 @@ import {
     ViewUpdate,
     WidgetType,
 } from '@codemirror/view';
+import { syntaxTree } from '@codemirror/language';
 
 /**
  * Regex to match image embeds: ![[target]] or ![[target|alt]]
@@ -113,7 +114,44 @@ class ImageEmbedWidget extends WidgetType {
     }
 }
 
-import { syntaxTree } from '@codemirror/language';
+/**
+ * Collect code ranges from the syntax tree (for exclusion from decorations)
+ */
+function collectCodeRanges(view: EditorView): { from: number; to: number }[] {
+    const ranges: { from: number; to: number }[] = [];
+    const tree = syntaxTree(view.state);
+
+    for (const { from, to } of view.visibleRanges) {
+        tree.iterate({
+            from,
+            to,
+            enter(node) {
+                if (
+                    node.name === 'InlineCode' ||
+                    node.name === 'FencedCode' ||
+                    node.name === 'CodeBlock' ||
+                    node.name === 'CodeText'
+                ) {
+                    ranges.push({ from: node.from, to: node.to });
+                }
+            },
+        });
+    }
+
+    return ranges;
+}
+
+/**
+ * Check if a position range overlaps with any code range
+ */
+function isInsideCode(from: number, to: number, codeRanges: { from: number; to: number }[]): boolean {
+    for (const range of codeRanges) {
+        if (from < range.to && to > range.from) {
+            return true;
+        }
+    }
+    return false;
+}
 
 /**
  * Build decorations for image embeds
@@ -123,31 +161,16 @@ function buildImageEmbedDecorations(view: EditorView): DecorationSet {
     const doc = view.state.doc;
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 
+    // Pre-collect code ranges once (O(n) instead of O(n²))
+    const codeRanges = collectCodeRanges(view);
+
     for (const { from, to } of view.visibleRanges) {
         const text = doc.sliceString(from, to);
         const matches = parseImageEmbeds(text, from);
 
         for (const match of matches) {
-            // Check if match is inside a code block
-            const tree = syntaxTree(view.state);
-            let isCode = false;
-            tree.iterate({
-                from: match.from,
-                to: match.to,
-                enter: (node) => {
-                    if (
-                        node.name === 'InlineCode' ||
-                        node.name === 'FencedCode' ||
-                        node.name === 'CodeBlock' ||
-                        node.name === 'CodeText'
-                    ) {
-                        isCode = true;
-                        return false; // Stop iterating
-                    }
-                },
-            });
-
-            if (isCode) continue;
+            // Simple range check instead of tree iteration per match
+            if (isInsideCode(match.from, match.to, codeRanges)) continue;
 
             const matchLine = doc.lineAt(match.from).number;
             const isActiveLine = matchLine === cursorLine;
@@ -155,7 +178,6 @@ function buildImageEmbedDecorations(view: EditorView): DecorationSet {
             if (isActiveLine) {
                 // On active line, show the raw syntax
                 // We don't add any decorations here to let the raw text show
-                // Optionally we could add a mark to style the syntax if desired
             } else {
                 // On other lines, replace with the image widget
                 builder.add(
@@ -178,14 +200,24 @@ function buildImageEmbedDecorations(view: EditorView): DecorationSet {
 const imageEmbedPlugin = ViewPlugin.fromClass(
     class {
         decorations: DecorationSet;
+        lastCursorLine: number;
 
         constructor(view: EditorView) {
             this.decorations = buildImageEmbedDecorations(view);
+            this.lastCursorLine = view.state.doc.lineAt(view.state.selection.main.head).number;
         }
 
         update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+            if (update.docChanged || update.viewportChanged) {
                 this.decorations = buildImageEmbedDecorations(update.view);
+                this.lastCursorLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
+            } else if (update.selectionSet) {
+                // Only rebuild if cursor moved to a different line
+                const newLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
+                if (newLine !== this.lastCursorLine) {
+                    this.decorations = buildImageEmbedDecorations(update.view);
+                    this.lastCursorLine = newLine;
+                }
             }
         }
     },

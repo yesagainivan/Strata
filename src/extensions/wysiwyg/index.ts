@@ -604,7 +604,8 @@ function buildDecorations(view: EditorView): DecorationSet {
 
             // Mask code sections so regex can't match across them
             const maskedText = maskCodeSections(line.text, line.from, codeRanges);
-            const highlightRegex = /==((?:[^=]|=[^=])+)==/g;
+            // Reset module-level regex state before use
+            highlightRegex.lastIndex = 0;
             let match;
 
             while ((match = highlightRegex.exec(maskedText)) !== null) {
