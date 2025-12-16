@@ -12,7 +12,7 @@ import {
     ViewUpdate,
     WidgetType,
 } from '@codemirror/view';
-import { syntaxTree } from '@codemirror/language';
+import { collectCodeRanges, isInsideCode } from './utils';
 
 /**
  * Configuration for the wikilink extension
@@ -113,44 +113,6 @@ class WikilinkWidget extends WidgetType {
  */
 const wikilinkMark = Decoration.mark({ class: 'cm-wikilink-source' });
 
-/**
- * Collect code ranges from the syntax tree (for exclusion from decorations)
- */
-function collectCodeRanges(view: EditorView): { from: number; to: number }[] {
-    const ranges: { from: number; to: number }[] = [];
-    const tree = syntaxTree(view.state);
-
-    for (const { from, to } of view.visibleRanges) {
-        tree.iterate({
-            from,
-            to,
-            enter(node) {
-                if (
-                    node.name === 'InlineCode' ||
-                    node.name === 'FencedCode' ||
-                    node.name === 'CodeBlock' ||
-                    node.name === 'CodeText'
-                ) {
-                    ranges.push({ from: node.from, to: node.to });
-                }
-            },
-        });
-    }
-
-    return ranges;
-}
-
-/**
- * Check if a position range overlaps with any code range
- */
-function isInsideCode(from: number, to: number, codeRanges: { from: number; to: number }[]): boolean {
-    for (const range of codeRanges) {
-        if (from < range.to && to > range.from) {
-            return true;
-        }
-    }
-    return false;
-}
 
 /**
  * Build decorations for wikilinks
