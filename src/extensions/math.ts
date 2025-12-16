@@ -76,28 +76,14 @@ function findMathExpressions(text: string, offset: number): MathMatch[] {
 
 /**
  * Widget for rendered math
+ * Uses lazy rendering - KaTeX is only invoked when the widget is actually displayed
  */
 class MathWidget extends WidgetType {
-    private html: string;
-    private error: string | null = null;
-
     constructor(
         private tex: string,
         private isBlock: boolean
     ) {
         super();
-        try {
-            this.html = katex.renderToString(tex, {
-                displayMode: isBlock,
-                throwOnError: false,
-                errorColor: '#cc0000',
-                trust: false,
-                strict: false,
-            });
-        } catch (e) {
-            this.error = e instanceof Error ? e.message : 'Invalid LaTeX';
-            this.html = '';
-        }
     }
 
     toDOM(): HTMLElement {
@@ -106,12 +92,18 @@ class MathWidget extends WidgetType {
         // Prevent cursor from entering widget and causing selection issues
         wrapper.setAttribute('contenteditable', 'false');
 
-        if (this.error) {
+        try {
+            wrapper.innerHTML = katex.renderToString(this.tex, {
+                displayMode: this.isBlock,
+                throwOnError: false,
+                errorColor: '#cc0000',
+                trust: false,
+                strict: false,
+            });
+        } catch (e) {
             wrapper.className += ' cm-math-error';
             wrapper.textContent = this.tex;
-            wrapper.title = this.error;
-        } else {
-            wrapper.innerHTML = this.html;
+            wrapper.title = e instanceof Error ? e.message : 'Invalid LaTeX';
         }
 
         return wrapper;
