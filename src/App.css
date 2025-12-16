@@ -81,10 +81,12 @@ body,
   letter-spacing: -0.01em;
 }
 
-.app-icon {
-  font-size: 18px;
+.app-logo {
+  width: 24px;
+  height: 24px;
   color: var(--accent);
-  filter: drop-shadow(0 0 4px var(--accent-soft));
+  filter: drop-shadow(0 0 6px var(--accent-soft));
+  flex-shrink: 0;
 }
 
 .app-subtitle {

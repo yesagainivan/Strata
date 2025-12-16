@@ -65,7 +65,12 @@ function App() {
       <header className="toolbar">
         <div className="toolbar-left">
           <div className="app-title">
-            <span className="app-icon">⛰️</span>
+            <svg className="app-logo" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <path d="M4 22 L28 22 L26 26 L6 26 Z" fill="currentColor" opacity="0.4" />
+              <path d="M6 16 L26 16 L24 20 L8 20 Z" fill="currentColor" opacity="0.65" />
+              <path d="M8 10 L24 10 L22 14 L10 14 Z" fill="currentColor" opacity="0.9" />
+              <path d="M10 8 L22 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+            </svg>
             <span>Strata Editor</span>
           </div>
           <span className="app-subtitle">Structured • Natural • Powerful</span>

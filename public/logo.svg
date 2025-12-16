@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- 
+    Strata Logo
+    Abstract representation of geological strata/layers
+    Three horizontal bands with subtle perspective, suggesting depth and structure
+  -->
+  
+  <!-- Bottom layer (widest) -->
+  <path d="M4 22 L28 22 L26 26 L6 26 Z" fill="currentColor" opacity="0.4"/>
+  
+  <!-- Middle layer -->
+  <path d="M6 16 L26 16 L24 20 L8 20 Z" fill="currentColor" opacity="0.65"/>
+  
+  <!-- Top layer (narrowest, most prominent) -->
+  <path d="M8 10 L24 10 L22 14 L10 14 Z" fill="currentColor" opacity="0.9"/>
+  
+  <!-- Accent line on top -->
+  <path d="M10 8 L22 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+</svg>
