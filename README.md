@@ -24,10 +24,18 @@ A production-ready **CodeMirror 6** markdown editor with Obsidian-style WYSIWYG 
 ## Installation
 
 ```bash
+npm install strata-editor @codemirror/autocomplete @codemirror/commands @codemirror/lang-markdown @codemirror/language @codemirror/state @codemirror/view @lezer/highlight @lezer/markdown
+```
+
+Or with specific CodeMirror versions you already have:
+
+```bash
 npm install strata-editor
 ```
 
-**Peer Dependencies:** React 18+ or 19+
+**Peer Dependencies:** 
+- React 18+ or 19+
+- CodeMirror 6 packages (see above)
 
 ## Quick Start
 

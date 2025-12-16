@@ -6,6 +6,19 @@ import { resolve } from 'path'
 // Check if building library or demo
 const isLibBuild = process.env.BUILD_MODE === 'lib'
 
+// CodeMirror packages to externalize (provided by consumer)
+const codemirrorExternals = [
+  '@codemirror/autocomplete',
+  '@codemirror/commands',
+  '@codemirror/lang-markdown',
+  '@codemirror/language',
+  '@codemirror/language-data',
+  '@codemirror/state',
+  '@codemirror/view',
+  '@lezer/highlight',
+  '@lezer/markdown',
+]
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -30,7 +43,13 @@ export default defineConfig({
       fileName: (format) => `strata-editor.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      // Externalize peer dependencies - not bundled, provided by consumer
+      external: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        ...codemirrorExternals,
+      ],
       output: {
         globals: {
           react: 'React',
