@@ -21,14 +21,15 @@ A production-ready **CodeMirror 6** markdown editor with Obsidian-style WYSIWYG 
 - 🔌 **Extensible** — Simple API for custom syntax
 - 🛡️ **Error Boundary** — Graceful error handling
 
-## Quick Start
+## Installation
 
 ```bash
-npm install
-npm run dev
+npm install strata-editor
 ```
 
-## Usage
+**Peer Dependencies:** React 18+ or 19+
+
+## Quick Start
 
 ```tsx
 import { MarkdownEditor, EditorErrorBoundary, createThemeStyles, mathExtension } from 'strata-editor';

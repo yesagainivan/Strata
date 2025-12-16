@@ -32,6 +32,7 @@ export {
     tagExtension,
     mathExtension,
     tableExtension,
+    imageEmbedExtension,
     CALLOUT_TYPES,
 } from './extensions';
 export type { WikilinkConfig, TagConfig } from './extensions';
