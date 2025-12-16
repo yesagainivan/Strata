@@ -205,8 +205,8 @@ function App() {
             placeholder="Start writing your note..."
             onWikilinkClick={handleWikilinkClick}
             onTagClick={handleTagClick}
-            extensions={[mentionExtension, mathExtension(), tableExtension()]}
-            // extensions={[mentionExtension, mathExtension()]}  // Remove tableExtension()
+            // extensions={[mentionExtension, mathExtension(), tableExtension()]}
+            extensions={[]}
             className="editor-instance"
           />
         </EditorErrorBoundary>
