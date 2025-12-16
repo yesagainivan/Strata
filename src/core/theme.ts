@@ -671,10 +671,8 @@ export const codeHighlightStyle = HighlightStyle.define([
     { tag: tags.emphasis, fontStyle: 'italic' },
     { tag: tags.strikethrough, textDecoration: 'line-through' },
 
-    // Meta/annotations
-    { tag: tags.meta, color: 'var(--code-comment)' },
-    { tag: tags.annotation, color: 'var(--code-comment)' },
-    { tag: tags.processingInstruction, color: 'var(--code-comment)' },
+    // Note: We intentionally don't style tags.meta, tags.annotation, or 
+    // tags.processingInstruction here as they conflict with markdown heading markers.
 
     // Invalid/error
     { tag: tags.invalid, color: 'var(--code-keyword)', textDecoration: 'underline wavy' },
