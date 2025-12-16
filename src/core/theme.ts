@@ -499,6 +499,48 @@ const baseTheme = EditorView.baseTheme({
         color: 'inherit !important',
     },
 
+    // Task checkboxes
+    '.cm-task-checkbox': {
+        appearance: 'none',
+        width: '16px',
+        height: '16px',
+        border: '2px solid var(--syntax-list-marker)',
+        borderRadius: '3px',
+        cursor: 'pointer',
+        verticalAlign: 'middle',
+        marginRight: '4px',
+        position: 'relative',
+        top: '-1px',
+        backgroundColor: 'transparent',
+        transition: 'background-color 0.15s ease, border-color 0.15s ease',
+        // Prevent strikethrough from crossing the checkbox
+        textDecoration: 'none !important',
+    },
+    '.cm-task-checkbox:checked': {
+        backgroundColor: 'var(--syntax-list-marker)',
+        borderColor: 'var(--syntax-list-marker)',
+    },
+    '.cm-task-checkbox:checked::after': {
+        content: '""',
+        position: 'absolute',
+        left: '3px',
+        top: '0px',
+        width: '4px',
+        height: '8px',
+        border: 'solid var(--editor-bg, #fff)',
+        borderWidth: '0 2px 2px 0',
+        transform: 'rotate(45deg)',
+    },
+    '.cm-task-checkbox:hover': {
+        borderColor: 'var(--wikilink-color)',
+    },
+    // Completed task styling (strikethrough on text only)
+    '.cm-task-completed': {
+        textDecorationLine: 'line-through',
+        textDecorationColor: 'var(--editor-gutter-text)',
+        opacity: '0.6',
+    },
+
 
     // Horizontal rules
     '.cm-horizontal-rule': {

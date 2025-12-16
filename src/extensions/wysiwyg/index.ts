@@ -56,9 +56,14 @@ function getHeadingDecoration(level: number): Decoration {
 
 /**
  * Task checkbox widget
+ * Stores position for click-to-toggle functionality
  */
 class TaskCheckboxWidget extends WidgetType {
-    constructor(private checked: boolean) {
+    constructor(
+        private checked: boolean,
+        private from: number,
+        private to: number
+    ) {
         super();
     }
 
@@ -68,11 +73,20 @@ class TaskCheckboxWidget extends WidgetType {
         checkbox.checked = this.checked;
         checkbox.className = 'cm-task-checkbox';
         checkbox.setAttribute('aria-label', this.checked ? 'Completed task' : 'Incomplete task');
+        // Store position for event delegation
+        checkbox.dataset.taskFrom = String(this.from);
+        checkbox.dataset.taskTo = String(this.to);
+        checkbox.dataset.taskChecked = String(this.checked);
         return checkbox;
     }
 
     eq(other: TaskCheckboxWidget): boolean {
-        return this.checked === other.checked;
+        return this.checked === other.checked && this.from === other.from;
+    }
+
+    ignoreEvent(): boolean {
+        // Return false to let click events bubble to our event handler
+        return false;
     }
 }
 
@@ -529,13 +543,23 @@ function buildDecorations(view: EditorView): DecorationSet {
                 if (node.name === 'TaskMarker') {
                     const text = doc.sliceString(node.from, node.to);
                     const checked = text.includes('x') || text.includes('X');
+                    const line = doc.lineAt(node.from);
+
+                    // Add strikethrough for completed tasks - only on text AFTER the marker
+                    if (checked && node.to < line.to) {
+                        decos.push({
+                            from: node.to,
+                            to: line.to,
+                            deco: Decoration.mark({ class: 'cm-task-completed' }),
+                        });
+                    }
 
                     if (!isActiveLine) {
                         decos.push({
                             from: node.from,
                             to: node.to,
                             deco: Decoration.replace({
-                                widget: new TaskCheckboxWidget(checked),
+                                widget: new TaskCheckboxWidget(checked, node.from, node.to),
                             }),
                         });
                     }
@@ -788,8 +812,38 @@ const footnoteClickHandler = EditorView.domEventHandlers({
 });
 
 /**
+ * Event delegation handler for task checkbox clicks
+ * Toggles [ ] ↔ [x] in the document when a checkbox is clicked
+ */
+const taskCheckboxHandler = EditorView.domEventHandlers({
+    mousedown(event, view) {
+        const target = event.target as HTMLElement;
+
+        // Check if click was on a task checkbox
+        if (target.classList.contains('cm-task-checkbox') && target.dataset.taskFrom && target.dataset.taskTo) {
+            const from = parseInt(target.dataset.taskFrom, 10);
+            const to = parseInt(target.dataset.taskTo, 10);
+            const wasChecked = target.dataset.taskChecked === 'true';
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Toggle the task marker: [ ] ↔ [x]
+            const newText = wasChecked ? '[ ]' : '[x]';
+
+            view.dispatch({
+                changes: { from, to, insert: newText },
+            });
+
+            return true;
+        }
+        return false;
+    }
+});
+
+/**
  * WYSIWYG extension that provides Obsidian-style live preview
  */
 export function wysiwygExtension(): Extension {
-    return [wysiwygPlugin, footnoteClickHandler];
+    return [wysiwygPlugin, footnoteClickHandler, taskCheckboxHandler];
 }
