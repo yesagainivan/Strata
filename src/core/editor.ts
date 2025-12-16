@@ -73,9 +73,9 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
         syntaxHighlighting(codeHighlightStyle),
 
         // WYSIWYG extensions (hidden marks, styled headings)
-        wysiwygExtension(),
+        // wysiwygExtension(),
         // Obsidian-style extensions
-        wikilinkExtension({ onClick: onWikilinkClick, triggerOn: wikilinkInteraction }),
+        // wikilinkExtension({ onClick: onWikilinkClick, triggerOn: wikilinkInteraction }),
         calloutExtension(),  // Note: Currently minimal (theme-only) due to cursor bug in ViewPlugin
         tagExtension({ onClick: onTagClick, triggerOn: tagInteraction }),
         imageEmbedExtension(),
