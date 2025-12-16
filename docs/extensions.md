@@ -5,7 +5,7 @@ Create your own syntax extensions with the `createExtension` API.
 ## Basic Extension
 
 ```tsx
-import { createExtension } from 'modern-markdown-editor';
+import { createExtension } from 'strata-editor';
 
 const mentions = createExtension({
   name: 'mention',

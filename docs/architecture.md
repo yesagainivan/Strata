@@ -73,22 +73,34 @@ const foldState = StateField.define<Map<number, boolean>>({
 
 ### Block Widgets (Tables)
 
-**Critical insight:** Block widgets (`block: true`) cannot be provided via `ViewPlugin`. You MUST use `StateField` with the `provide` option:
+**Critical insight:** Block widgets (`block: true`) cannot be provided via `ViewPlugin`. Use `EditorView.decorations.compute()` instead:
 
 ```typescript
-const tableField = StateField.define<DecorationSet>({
-    create(state) {
-        return buildDecorations(state);
-    },
-    update(decorations, tr) {
-        if (tr.docChanged || tr.selection) {
-            return buildDecorations(tr.state);
+const tableDecorations = EditorView.decorations.compute(
+    ['doc', 'selection'],
+    (state) => {
+        const doc = state.doc;
+        const cursorPos = state.selection.main.head;
+        
+        // Build decorations based on state
+        const tables = findTables(doc);
+        const builder = new RangeSetBuilder<Decoration>();
+        
+        for (const table of tables) {
+            const isEditing = cursorPos >= table.from && cursorPos <= table.to;
+            if (!isEditing) {
+                builder.add(table.from, table.from, 
+                    Decoration.widget({
+                        widget: new TableWidget(table),
+                        block: true,
+                        side: -1, // Before content
+                    })
+                );
+            }
         }
-        return decorations;
-    },
-    // This is required for block widgets!
-    provide: field => EditorView.decorations.from(field),
-});
+        return builder.finish();
+    }
+);
 ```
 
 **Multi-line content strategy:**
@@ -97,13 +109,6 @@ const tableField = StateField.define<DecorationSet>({
 3. CSS must use `height: 0`, `visibility: hidden` (not just `color: transparent`)
 
 ```typescript
-// Widget before first line
-Decoration.widget({
-    widget: new TableWidget(table),
-    block: true,
-    side: -1, // Before content
-});
-
 // Hide underlying lines
 Decoration.line({ class: 'cm-hidden-line' });
 ```
@@ -154,6 +159,20 @@ decos.sort((a, b) => a.from - b.from);
 const builder = new RangeSetBuilder<Decoration>();
 for (const { from, to, deco } of decos) {
   builder.add(from, to, deco);
+}
+```
+
+### 4. Pre-collected Code Ranges
+
+When checking if matches are inside code blocks, collect ranges once instead of iterating the syntax tree per match:
+
+```typescript
+// O(n) - collect once
+const codeRanges = collectCodeRanges(view);
+
+for (const match of matches) {
+    // O(1) check per match instead of O(n) tree iteration
+    if (isInsideCode(match.from, match.to, codeRanges)) continue;
 }
 ```
 
@@ -209,6 +228,6 @@ useEffect(() => {
 | `extensions/wikilink.ts` | `[[link]]` support |
 | `extensions/callout.ts` | `> [!type]` with folding |
 | `extensions/tag.ts` | `#hashtag` support |
-| `extensions/table.ts` | Markdown table rendering (StateField) |
+| `extensions/table.ts` | Markdown table rendering (computed decorations) |
 | `extensions/math.ts` | LaTeX math with KaTeX |
 | `api/extension.ts` | User extension API |
