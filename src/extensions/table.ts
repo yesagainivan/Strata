@@ -52,105 +52,104 @@ function parseRow(row: string): string[] {
 }
 
 /**
+ * Module-level regex patterns for table cell rendering
+ * These are created once and reused for all cells
+ */
+const CELL_PATTERNS = {
+    math: /\$([^$\n]+)\$/g,
+    wikilink: /\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g,
+    tag: /(?<![\&\w])#([\w\/-]+)/g,
+    code: /`([^`]+)`/g,
+    bold: /\*\*([^*]+)\*\*|__([^_]+)__/g,
+    italic: /(?<!\w)\*([^*]+)\*(?!\w)|(?<!\w)_([^_]+)_(?!\w)/g,
+    strikethrough: /~~([^~]+)~~/g,
+    highlight: /==([^=]+)==/g,
+} as const;
+
+/**
+ * Pattern type for ordered processing
+ */
+type PatternKey = keyof typeof CELL_PATTERNS;
+
+/**
+ * Order of pattern processing (more specific first)
+ */
+const PATTERN_ORDER: PatternKey[] = [
+    'math', 'wikilink', 'tag', 'code', 'bold', 'italic', 'strikethrough', 'highlight'
+];
+
+/**
+ * Create DOM element for a pattern match
+ */
+function createElementForMatch(type: PatternKey, match: RegExpMatchArray): HTMLElement | Text {
+    switch (type) {
+        case 'math': {
+            const span = document.createElement('span');
+            span.className = 'cm-math-inline';
+            try {
+                span.innerHTML = katex.renderToString(match[1], {
+                    displayMode: false,
+                    throwOnError: false,
+                    errorColor: '#cc0000',
+                });
+            } catch {
+                span.className = 'cm-math-error';
+                span.textContent = match[0];
+            }
+            return span;
+        }
+        case 'wikilink': {
+            const span = document.createElement('span');
+            span.className = 'cm-wikilink';
+            span.textContent = match[3] || match[1];
+            span.dataset.wikilinkTarget = match[1];
+            if (match[3]) span.dataset.wikilinkAlias = match[3];
+            if (match[2]) span.title = `${match[1]}#${match[2]}`;
+            else span.title = match[1];
+            return span;
+        }
+        case 'tag': {
+            const span = document.createElement('span');
+            span.className = 'cm-tag';
+            span.textContent = `#${match[1]}`;
+            span.dataset.tag = match[1];
+            return span;
+        }
+        case 'code': {
+            const code = document.createElement('code');
+            code.className = 'cm-table-inline-code';
+            code.textContent = match[1];
+            return code;
+        }
+        case 'bold': {
+            const strong = document.createElement('strong');
+            strong.textContent = match[1] || match[2];
+            return strong;
+        }
+        case 'italic': {
+            const em = document.createElement('em');
+            em.textContent = match[1] || match[2];
+            return em;
+        }
+        case 'strikethrough': {
+            const del = document.createElement('del');
+            del.textContent = match[1];
+            return del;
+        }
+        case 'highlight': {
+            const mark = document.createElement('mark');
+            mark.className = 'cm-highlight';
+            mark.textContent = match[1];
+            return mark;
+        }
+    }
+}
+
+/**
  * Render cell content with markdown syntax support
  * Supports: [[wikilinks]], #tags, **bold**, *italic*, `code`, ~~strikethrough~~, ==highlight==, $math$
  */
 function renderCellContent(cell: string, container: HTMLElement): void {
-    // Order matters: process more specific patterns first
-    const patterns: { regex: RegExp; replace: (match: RegExpMatchArray) => HTMLElement | Text }[] = [
-        // Inline math: $...$
-        {
-            regex: /\$([^$\n]+)\$/g,
-            replace: (match) => {
-                const span = document.createElement('span');
-                span.className = 'cm-math-inline';
-                try {
-                    span.innerHTML = katex.renderToString(match[1], {
-                        displayMode: false,
-                        throwOnError: false,
-                        errorColor: '#cc0000',
-                    });
-                } catch {
-                    span.className = 'cm-math-error';
-                    span.textContent = match[0];
-                }
-                return span;
-            }
-        },
-        // Wikilinks: [[target]] or [[target|alias]]
-        {
-            regex: /\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g,
-            replace: (match) => {
-                const span = document.createElement('span');
-                span.className = 'cm-wikilink';
-                span.textContent = match[3] || match[1]; // alias or target
-                span.dataset.wikilinkTarget = match[1];
-                if (match[3]) span.dataset.wikilinkAlias = match[3];
-                if (match[2]) span.title = `${match[1]}#${match[2]}`;
-                else span.title = match[1];
-                return span;
-            }
-        },
-        // Tags: #tag or #nested/tag
-        {
-            regex: /(?<![&\w])#([\w\/-]+)/g,
-            replace: (match) => {
-                const span = document.createElement('span');
-                span.className = 'cm-tag';
-                span.textContent = `#${match[1]}`;
-                span.dataset.tag = match[1];
-                return span;
-            }
-        },
-        // Inline code: `code`
-        {
-            regex: /`([^`]+)`/g,
-            replace: (match) => {
-                const code = document.createElement('code');
-                code.className = 'cm-table-inline-code';
-                code.textContent = match[1];
-                return code;
-            }
-        },
-        // Bold: **text** or __text__
-        {
-            regex: /\*\*([^*]+)\*\*|__([^_]+)__/g,
-            replace: (match) => {
-                const strong = document.createElement('strong');
-                strong.textContent = match[1] || match[2];
-                return strong;
-            }
-        },
-        // Italic: *text* or _text_ (but not inside words for underscores)
-        {
-            regex: /(?<!\w)\*([^*]+)\*(?!\w)|(?<!\w)_([^_]+)_(?!\w)/g,
-            replace: (match) => {
-                const em = document.createElement('em');
-                em.textContent = match[1] || match[2];
-                return em;
-            }
-        },
-        // Strikethrough: ~~text~~
-        {
-            regex: /~~([^~]+)~~/g,
-            replace: (match) => {
-                const del = document.createElement('del');
-                del.textContent = match[1];
-                return del;
-            }
-        },
-        // Highlight: ==text==
-        {
-            regex: /==([^=]+)==/g,
-            replace: (match) => {
-                const mark = document.createElement('mark');
-                mark.className = 'cm-highlight';
-                mark.textContent = match[1];
-                return mark;
-            }
-        },
-    ];
-
     // Process the cell content with all patterns
     let remaining = cell;
     const fragments: (HTMLElement | Text)[] = [];
@@ -159,14 +158,15 @@ function renderCellContent(cell: string, container: HTMLElement): void {
         let earliestMatch: { index: number; length: number; element: HTMLElement | Text } | null = null;
 
         // Find the earliest match among all patterns
-        for (const { regex, replace } of patterns) {
+        for (const patternKey of PATTERN_ORDER) {
+            const regex = CELL_PATTERNS[patternKey];
             regex.lastIndex = 0; // Reset regex state
             const match = regex.exec(remaining);
             if (match && (earliestMatch === null || match.index < earliestMatch.index)) {
                 earliestMatch = {
                     index: match.index,
                     length: match[0].length,
-                    element: replace(match as RegExpMatchArray),
+                    element: createElementForMatch(patternKey, match),
                 };
             }
         }
