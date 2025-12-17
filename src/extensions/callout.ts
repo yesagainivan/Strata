@@ -423,6 +423,7 @@ const calloutTheme = EditorView.baseTheme({
         height: '12px',
     },
     // Header widget
+    // NOTE: No vertical margin here - margins on inline widgets can cause scroll issues
     '.cm-callout-header-widget': {
         display: 'inline-flex',
         alignItems: 'center',
@@ -430,7 +431,6 @@ const calloutTheme = EditorView.baseTheme({
         fontWeight: '600',
         verticalAlign: 'middle',
         lineHeight: '1',
-        marginTop: '-2px', // Slight visual correction for vertical optical alignment
     },
     '.cm-callout-icon': {
         display: 'inline-flex',
