@@ -38,8 +38,8 @@ export {
 export type { WikilinkConfig, TagConfig } from './extensions';
 
 // User extension API
-export { createExtension, createExtensions } from './api/extension';
-export type { CustomExtensionConfig } from './api/extension';
+export { createExtension, createExtensions, createBlockExtension } from './api/extension';
+export type { CustomExtensionConfig, BlockExtensionConfig } from './api/extension';
 
 // Core utilities (for advanced users)
 export { createEditor, updateReadOnly, destroyEditor } from './core/editor';

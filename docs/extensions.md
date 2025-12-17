@@ -99,6 +99,42 @@ const embedExtension = createExtension({
 | `cacheKey` | `function` | Height cache key generator |
 | `coordsAt` | `function` | Custom scroll coordinate mapping |
 
+## Advanced: `createBlockExtension`
+
+For true CM6 block widgets with proper layout support, use `createBlockExtension`:
+
+```tsx
+import { createBlockExtension } from 'strata-editor';
+
+const embedPreview = createBlockExtension({
+  name: 'embed',
+  pattern: /^::embed\[([^\]]+)\]$/gm,  // Must match entire line
+  estimatedHeight: 200,
+  cacheKey: (match) => `embed:${match[1]}`,
+  widget: (match, view) => {
+    const div = document.createElement('div');
+    div.innerHTML = `<iframe src="${match[1]}"></iframe>`;
+    return div;
+  },
+});
+```
+
+### Block Extension Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `string` | Unique identifier |
+| `pattern` | `RegExp` | Pattern to match (use `^...$` for full line) |
+| `widget` | `function` | Widget factory `(match, view) => HTMLElement` |
+| `estimatedHeight` | `number` | Height estimate (default: 100) |
+| `cacheKey` | `function` | Height cache key generator |
+| `onMount` | `function` | Lifecycle: widget created |
+| `onDestroy` | `function` | Lifecycle: widget destroyed |
+
+> [!tip] When to use `createBlockExtension`
+> Use this for widgets that replace entire lines and need proper block layout.
+> For inline patterns, use regular `createExtension`.
+
 ## Styling Extensions
 
 Add CSS for your extension's class:

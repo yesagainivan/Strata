@@ -7,6 +7,7 @@ import { useState, useRef, useMemo } from "react";
 import {
   MarkdownEditor,
   createExtension,
+  createBlockExtension,
   mathExtension,
   tableExtension,
   EditorErrorBoundary,
@@ -25,6 +26,58 @@ const mentionExtension = createExtension({
   className: "cm-mention",
   onClick: (match) => {
     alert(`Clicked on user: @${match[1]}`);
+  },
+});
+
+// ::embed[url] - Smart embed with YouTube player support
+// Uses StateField for true CM6 block decoration support
+const embedExtension = createBlockExtension({
+  name: "embed-preview",
+  pattern: /^::embed\[([^\]]+)\]$/gm,
+  estimatedHeight: 315, // Standard 16:9 video height for 560px width
+  cacheKey: (match) => `embed:${match[1]}`,
+  widget: (match) => {
+    const url = match[1].trim();
+    const container = document.createElement("div");
+    container.className = "cm-embed-widget";
+
+    // Extract YouTube video ID from various URL formats
+    const youtubeMatch = url.match(
+      /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    );
+
+    if (youtubeMatch) {
+      // YouTube video - render actual player
+      const videoId = youtubeMatch[1];
+      container.innerHTML = `
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; background: #000;">
+          <iframe 
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+            src="https://www.youtube.com/embed/${videoId}"
+            title="YouTube video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+      `;
+    } else {
+      // Other URLs - styled link preview
+      container.style.cssText = "padding: 16px; background: var(--syntax-code-bg); border-radius: 8px; border: 1px solid var(--editor-gutter-bg);";
+      container.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px;">🔗</span>
+          <div>
+            <div style="font-size: 0.85em; color: var(--editor-gutter-text); margin-bottom: 4px;">External Link</div>
+            <a href="${url}" target="_blank" rel="noopener noreferrer" 
+               style="color: var(--wikilink-color); word-break: break-all; text-decoration: none; font-weight: 500;">
+              ${url}
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    return container;
   },
 });
 
@@ -205,7 +258,7 @@ function App() {
             placeholder="Start writing your note..."
             onWikilinkClick={handleWikilinkClick}
             onTagClick={handleTagClick}
-            extensions={[mentionExtension, mathExtension(), tableExtension()]}
+            extensions={[mentionExtension, embedExtension, mathExtension(), tableExtension()]}
             className="editor-instance"
           />
         </EditorErrorBoundary>

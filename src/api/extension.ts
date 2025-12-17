@@ -3,7 +3,7 @@
  * Simple API for users to create custom syntax extensions
  */
 
-import { Extension, RangeSetBuilder } from '@codemirror/state';
+import { Extension, RangeSetBuilder, StateField } from '@codemirror/state';
 import {
     Decoration,
     DecorationSet,
@@ -272,9 +272,9 @@ function buildCustomDecorations(
                 decos.push({
                     from: matchFrom,
                     to: matchTo,
-                    deco: config.isBlock
-                        ? Decoration.replace({ widget, block: true })
-                        : Decoration.replace({ widget }),
+                    // Note: CM6 doesn't allow block decorations from ViewPlugins
+                    // Use CSS display:block on your widget for block-level appearance
+                    deco: Decoration.replace({ widget }),
                 });
             } else if (config.className) {
                 // Apply mark decoration with class
@@ -287,8 +287,14 @@ function buildCustomDecorations(
         }
     }
 
-    // Sort decorations by position (required for RangeSetBuilder)
-    decos.sort((a, b) => a.from - b.from || a.to - b.to);
+    // Sort decorations by position AND startSide (required for RangeSetBuilder)
+    // Line decorations have different startSide than widget decorations
+    decos.sort((a, b) => {
+        if (a.from !== b.from) return a.from - b.from;
+        // Sort by startSide when positions are equal
+        if (a.deco.startSide !== b.deco.startSide) return a.deco.startSide - b.deco.startSide;
+        return a.to - b.to;
+    });
 
     const builder = new RangeSetBuilder<Decoration>();
     for (const { from, to, deco } of decos) {
@@ -299,8 +305,11 @@ function buildCustomDecorations(
 
 /**
  * Create a custom view plugin for an extension
+ * 
+ * Note: Block-level layout is achieved via CSS (display:block) on widgets,
+ * not via CM6's block decoration flag (which requires StateField).
  */
-function createCustomPlugin(config: CustomExtensionConfig) {
+function createCustomPlugin(config: CustomExtensionConfig): Extension {
     return ViewPlugin.fromClass(
         class {
             decorations: DecorationSet;
@@ -401,4 +410,210 @@ export function createExtension(config: CustomExtensionConfig): Extension {
  */
 export function createExtensions(configs: CustomExtensionConfig[]): Extension[] {
     return configs.map(createExtension);
+}
+
+// ============================================================================
+// BLOCK EXTENSION API (for true CM6 block widgets)
+// ============================================================================
+
+/**
+ * Configuration for a block-level extension
+ * Block extensions use StateField and support true CM6 block decorations
+ */
+export interface BlockExtensionConfig {
+    /** Unique name for this extension */
+    name: string;
+    /** Regex pattern to match (must match an entire line) */
+    pattern: RegExp;
+    /** 
+     * Widget factory function
+     * @param match - The regex match
+     * @param view - The EditorView (for dispatching effects)
+     * @returns HTMLElement to render
+     */
+    widget: (match: RegExpMatchArray, view: EditorView) => HTMLElement;
+    /** 
+     * Estimated height in pixels for viewport calculations
+     * @default 100
+     */
+    estimatedHeight?: number;
+    /**
+     * Function to generate a unique cache key for height caching
+     */
+    cacheKey?: (match: RegExpMatchArray) => string;
+    /** Lifecycle hook: widget mounted */
+    onMount?: (element: HTMLElement, match: RegExpMatchArray) => void;
+    /** Lifecycle hook: widget destroyed */
+    onDestroy?: (element: HTMLElement) => void;
+}
+
+/**
+ * Block widget class for StateField-based decorations
+ */
+class BlockWidget extends WidgetType {
+    private mountedElement: HTMLElement | null = null;
+
+    constructor(
+        private element: HTMLElement,
+        private id: string,
+        private estimatedHeightValue: number,
+        private cacheKeyValue: string | null,
+        private match: RegExpMatchArray,
+        private onMount?: (el: HTMLElement, match: RegExpMatchArray) => void,
+        private onDestroyCallback?: (el: HTMLElement) => void
+    ) {
+        super();
+    }
+
+    get estimatedHeight(): number {
+        return this.estimatedHeightValue;
+    }
+
+    toDOM(view: EditorView): HTMLElement {
+        const el = this.element.cloneNode(true) as HTMLElement;
+        this.mountedElement = el;
+
+        if (this.onMount) {
+            this.onMount(el, this.match);
+        }
+
+        // Measure and cache height
+        if (this.cacheKeyValue) {
+            requestAnimationFrame(() => {
+                const height = el.getBoundingClientRect().height;
+                if (height > 0) {
+                    view.dispatch({
+                        effects: heightCacheEffect.of({
+                            key: this.cacheKeyValue!,
+                            height,
+                        }),
+                    });
+                    view.requestMeasure();
+                }
+            });
+        }
+
+        return el;
+    }
+
+    coordsAt(dom: HTMLElement, pos: number, side: -1 | 1): { top: number; bottom: number; left: number; right: number } | null {
+        if (this.mountedElement) {
+            const rect = this.mountedElement.getBoundingClientRect();
+            return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
+        }
+        return null;
+    }
+
+    destroy(): void {
+        if (this.onDestroyCallback && this.mountedElement) {
+            this.onDestroyCallback(this.mountedElement);
+        }
+        this.mountedElement = null;
+    }
+
+    eq(other: BlockWidget): boolean {
+        return this.id === other.id;
+    }
+}
+
+/**
+ * Create a block-level extension with true CM6 block decoration support
+ * 
+ * Uses StateField internally for proper block widget rendering.
+ * Supports height caching and coordsAt for smooth scrolling.
+ * 
+ * @example
+ * ```ts
+ * const embedPreview = createBlockExtension({
+ *   name: 'embed',
+ *   pattern: /^::embed\[([^\]]+)\]$/gm,
+ *   estimatedHeight: 200,
+ *   cacheKey: (match) => `embed:${match[1]}`,
+ *   widget: (match, view) => {
+ *     const div = document.createElement('div');
+ *     div.innerHTML = `<iframe src="${match[1]}"></iframe>`;
+ *     return div;
+ *   },
+ * });
+ * ```
+ */
+export function createBlockExtension(config: BlockExtensionConfig): Extension {
+    // Cache for block positions
+    const blockCache = StateField.define<{ from: number; to: number; match: RegExpMatchArray }[]>({
+        create(state) {
+            return findBlocks(state.doc.toString(), config.pattern);
+        },
+        update(blocks, tr) {
+            if (tr.docChanged) {
+                return findBlocks(tr.newDoc.toString(), config.pattern);
+            }
+            return blocks;
+        },
+    });
+
+    // Find blocks matching the pattern
+    function findBlocks(text: string, pattern: RegExp): { from: number; to: number; match: RegExpMatchArray }[] {
+        const results: { from: number; to: number; match: RegExpMatchArray }[] = [];
+        const regex = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            results.push({
+                from: match.index,
+                to: match.index + match[0].length,
+                match: match,
+            });
+        }
+        return results;
+    }
+
+    // Decorations computed from state
+    const blockDecorations = EditorView.decorations.compute(
+        [blockCache, heightCache, 'selection'],
+        (state) => {
+            const blocks = state.field(blockCache);
+            const cursorPos = state.selection.main.head;
+            const cursorLine = state.doc.lineAt(cursorPos).number;
+            const builder = new RangeSetBuilder<Decoration>();
+
+            for (const block of blocks) {
+                const blockLine = state.doc.lineAt(block.from).number;
+                const isActive = blockLine === cursorLine;
+
+                // Show widget when cursor is not on this line
+                if (!isActive) {
+                    const cacheKeyValue = config.cacheKey ? config.cacheKey(block.match) : null;
+                    const cachedHeight = cacheKeyValue
+                        ? getCachedHeight(state, cacheKeyValue, -1)
+                        : -1;
+                    const heightEstimate = cachedHeight > 0 ? cachedHeight : (config.estimatedHeight ?? 100);
+
+                    // Create a placeholder element - actual element created in toDOM
+                    const placeholder = document.createElement('div');
+                    placeholder.className = `cm-${config.name}-widget`;
+
+                    const widget = new BlockWidget(
+                        placeholder,
+                        `${config.name}-${block.from}`,
+                        heightEstimate,
+                        cacheKeyValue,
+                        block.match,
+                        (el, m) => {
+                            // Replace placeholder content with actual widget
+                            const content = config.widget(m, null as unknown as EditorView);
+                            el.innerHTML = '';
+                            el.appendChild(content);
+                            config.onMount?.(el, m);
+                        },
+                        config.onDestroy
+                    );
+
+                    builder.add(block.from, block.to, Decoration.replace({ widget, block: true }));
+                }
+            }
+
+            return builder.finish();
+        }
+    );
+
+    return [blockCache, blockDecorations];
 }

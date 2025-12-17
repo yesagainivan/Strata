@@ -189,12 +189,28 @@ fn main() {
 
 Strata supports custom pattern extensions. Try mentioning @users in your content!
 
+### Block Widget with Height Caching
+
+This YouTube embed uses `createBlockExtension` with true CM6 block support:
+
+::embed[https://youtu.be/PqVbypvxDto]
+
 ```typescript
 const mentionExtension = createExtension({
   name: 'mention',
   pattern: /@(\w+)/g,
   className: 'cm-mention',
   onClick: (match) => alert(`User: @${match[1]}`),
+});
+
+// Block widget with height caching (v2.1.0)
+const embedExtension = createExtension({
+  name: 'embed',
+  pattern: /::embed\[([^\]]+)\]/g,
+  isBlock: true,
+  estimatedHeight: 100,
+  cacheKey: (match) => `embed:${match[1]}`,
+  widget: (match) => { /* ... */ },
 });
 ```
 
