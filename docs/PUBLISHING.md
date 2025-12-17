@@ -14,7 +14,7 @@ How to publish and manage `strata-editor` on npm.
 npm version patch  # or minor/major
 
 # 2. Build and publish
-npm publish
+npm publish // this step is handled by the GitHub Action
 
 # 3. Push the version tag
 git push --follow-tags

@@ -1,6 +1,7 @@
 // Type definitions for the Markdown Editor
 
 import { Extension } from '@codemirror/state';
+import { EditorMode } from '../core/mode';
 
 // Re-export theme types
 export * from './theme';
@@ -20,8 +21,15 @@ export interface MarkdownEditorProps {
   extensions?: Extension[];
   /** Placeholder text when editor is empty */
   placeholder?: string;
-  /** Make editor read-only */
+  /** Make editor read-only (deprecated: use mode='read' instead) */
   readOnly?: boolean;
+  /**
+   * Editor mode:
+   * - 'live': WYSIWYG editing with cursor-reveal (default)
+   * - 'source': Raw markdown with syntax highlighting only
+   * - 'read': Read-only rendered preview
+   */
+  mode?: EditorMode;
   /** CSS class name for the editor container */
   className?: string;
   /** Callback when a wikilink is clicked */

@@ -14,6 +14,7 @@ import {
   createThemeStyles,
 } from "./index";
 import type { MarkdownEditorHandle, WikilinkData } from "./types";
+import type { EditorMode } from "./core/mode";
 import { THEME_PRESETS, getThemePreset, formatThemeCode } from "./demo/themes";
 import DEMO_CONTENT from "./demo/content.md?raw";
 import "katex/dist/katex.min.css";
@@ -83,6 +84,7 @@ function App() {
   const [content, setContent] = useState(DEMO_CONTENT);
   const [activeThemeId, setActiveThemeId] = useState("moss");
   const [showCode, setShowCode] = useState(false);
+  const [editorMode, setEditorMode] = useState<EditorMode>("live");
   const editorRef = useRef<MarkdownEditorHandle>(null);
 
   const activePreset = useMemo(
@@ -230,6 +232,31 @@ function App() {
           >
             {"{ }"}
           </button>
+
+          {/* Mode selector */}
+          <div className="mode-selector button-group">
+            <button
+              className={editorMode === "live" ? "active" : ""}
+              onClick={() => setEditorMode("live")}
+              title="Live Preview Mode"
+            >
+              ✏️
+            </button>
+            <button
+              className={editorMode === "source" ? "active" : ""}
+              onClick={() => setEditorMode("source")}
+              title="Source Mode"
+            >
+              📝
+            </button>
+            <button
+              className={editorMode === "read" ? "active" : ""}
+              onClick={() => setEditorMode("read")}
+              title="Read Mode"
+            >
+              👁️
+            </button>
+          </div>
         </div>
       </header>
 
@@ -253,6 +280,7 @@ function App() {
             ref={editorRef}
             value={content}
             onChange={setContent}
+            mode={editorMode}
             placeholder="Start writing your note..."
             onWikilinkClick={handleWikilinkClick}
             onTagClick={handleTagClick}
@@ -265,6 +293,7 @@ function App() {
       <footer className="status-bar">
         <span>Characters: {content.length}</span>
         <span>Lines: {content.split("\n").length}</span>
+        <span>Mode: {editorMode}</span>
         <span>
           Theme: {activePreset?.name} ({isDarkMode ? "dark" : "light"})
         </span>

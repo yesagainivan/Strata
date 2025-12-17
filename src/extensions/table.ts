@@ -14,6 +14,7 @@ import {
 } from '@codemirror/view';
 import katex from 'katex';
 import { heightCacheEffect, tableCacheKey, getCachedHeight, heightCache } from './heightCache';
+import { modeField } from '../core/mode';
 
 // Table separator pattern: matches |---|---|---| with any number of columns
 const TABLE_SEPARATOR_REGEX = /^\|?(\s*:?-+:?\s*\|)+\s*:?-*:?\s*\|?$/;
@@ -396,8 +397,16 @@ const tableCache = StateField.define<TableBlock[]>({
  * Only creates decorations based on cursor position, doesn't re-scan entire doc
  */
 const tableDecorations = EditorView.decorations.compute(
-    [tableCache, heightCache, 'selection'],  // heightCache added so we recompute with new cached heights
+    [tableCache, heightCache, 'selection', modeField],  // Added modeField to dependencies
     (state) => {
+        // Efficient O(1) mode check at the start
+        const mode = state.field(modeField);
+
+        // In source mode, return empty decorations (show raw markdown)
+        if (mode === 'source') {
+            return Decoration.none;
+        }
+
         const doc = state.doc;
         const cursorPos = state.selection.main.head;
 
@@ -407,7 +416,10 @@ const tableDecorations = EditorView.decorations.compute(
         const allDecos: { from: number; to: number; deco: Decoration }[] = [];
 
         for (const table of tables) {
-            const isEditing = cursorPos >= table.from && cursorPos <= table.to;
+            // In read mode, never consider cursor as "editing" the table
+            const isEditing = mode === 'read'
+                ? false
+                : (cursorPos >= table.from && cursorPos <= table.to);
 
             if (!isEditing) {
                 // Get cached height for this table

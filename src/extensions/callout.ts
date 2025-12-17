@@ -16,6 +16,7 @@ import {
     ViewUpdate,
     WidgetType,
 } from '@codemirror/view';
+import { modeField } from '../core/mode';
 
 // Effect to toggle fold state for a callout at a specific line
 const toggleFoldEffect = StateEffect.define<{ line: number }>();
@@ -205,9 +206,20 @@ interface DecoEntry {
 const hiddenLine = Decoration.line({ class: 'cm-callout-hidden-line' });
 
 function buildDecorations(view: EditorView): DecorationSet {
+    // Efficient O(1) mode check at the start
+    const mode = view.state.field(modeField);
+
+    // In source mode, return empty decorations (show raw markdown)
+    if (mode === 'source') {
+        return Decoration.none;
+    }
+
     const decos: DecoEntry[] = [];
     const doc = view.state.doc;
-    const cursorLine = doc.lineAt(view.state.selection.main.head).number;
+    // In read mode, use -1 so no line is ever "active" (always hide syntax)
+    const cursorLine = mode === 'read'
+        ? -1
+        : doc.lineAt(view.state.selection.main.head).number;
     const foldStates = view.state.field(foldState);
 
     // Scan only visible ranges for performance on large documents
@@ -369,12 +381,17 @@ const calloutPlugin = ViewPlugin.fromClass(
         }
 
         update(update: ViewUpdate) {
-            // Always rebuild on doc changes, viewport changes, or fold state changes
+            // Check if mode changed
+            const prevMode = update.startState.field(modeField, false);
+            const currMode = update.state.field(modeField, false);
+            const modeChanged = prevMode !== currMode;
+
+            // Always rebuild on doc changes, viewport changes, mode changes, or fold state changes
             const hasFoldEffect = update.transactions.some(tr =>
                 tr.effects.some(e => e.is(toggleFoldEffect))
             );
 
-            if (update.docChanged || update.viewportChanged || hasFoldEffect) {
+            if (update.docChanged || update.viewportChanged || modeChanged || hasFoldEffect) {
                 this.decorations = buildDecorations(update.view);
                 this.lastCursorLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
             } else if (update.selectionSet) {

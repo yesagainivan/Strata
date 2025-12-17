@@ -23,6 +23,7 @@ import {
 } from '@codemirror/view';
 import { syntaxTree } from '@codemirror/language';
 import { heightCacheEffect, imageCacheKey, getCachedHeight, heightCache } from './heightCache';
+import { modeField } from '../core/mode';
 
 // ============================================================================
 // Debug Configuration
@@ -257,16 +258,27 @@ class ImageEmbedWidget extends WidgetType {
  * Computed decorations using StateField-cached positions
  */
 const imageEmbedDecorations = EditorView.decorations.compute(
-    [imageEmbedCache, heightCache, 'selection'],  // heightCache added so we recompute with new cached heights
+    [imageEmbedCache, heightCache, 'selection', modeField],  // Added modeField to dependencies
     (state) => {
         // Early return if images are disabled for debugging
         if (DISABLE_IMAGE_EMBEDS) {
             return Decoration.none;
         }
 
+        // Efficient O(1) mode check at the start
+        const mode = state.field(modeField);
+
+        // In source mode, return empty decorations (show raw markdown)
+        if (mode === 'source') {
+            return Decoration.none;
+        }
+
         const doc = state.doc;
         const cursorPos = state.selection.main.head;
-        const cursorLine = doc.lineAt(cursorPos).number;
+        // In read mode, use -1 so no line is ever "active" (always render images)
+        const cursorLine = mode === 'read'
+            ? -1
+            : doc.lineAt(cursorPos).number;
 
         const matches = state.field(imageEmbedCache);
 

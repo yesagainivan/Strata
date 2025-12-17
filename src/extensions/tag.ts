@@ -12,6 +12,7 @@ import {
     ViewUpdate,
 } from '@codemirror/view';
 import { collectCodeRanges, isInsideCode } from './utils';
+import { modeField } from '../core/mode';
 
 /**
  * Configuration for the tag extension
@@ -109,7 +110,12 @@ const tagPlugin = ViewPlugin.fromClass(
         }
 
         update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged) {
+            // Check if mode changed
+            const prevMode = update.startState.field(modeField, false);
+            const currMode = update.state.field(modeField, false);
+            const modeChanged = prevMode !== currMode;
+
+            if (update.docChanged || update.viewportChanged || modeChanged) {
                 this.decorations = buildTagDecorations(update.view);
                 this.lastCursorLine = update.view.state.doc.lineAt(
                     update.view.state.selection.main.head

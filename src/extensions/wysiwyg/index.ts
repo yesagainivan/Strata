@@ -14,6 +14,7 @@ import {
 } from '@codemirror/view';
 import { syntaxTree } from '@codemirror/language';
 import { CodeRange, isInsideCode } from '../utils';
+import { modeField, EditorMode } from '../../core/mode';
 
 /**
  * Decoration for hidden marks (like ** for bold)
@@ -347,11 +348,22 @@ function maskCodeSections(
  * Build decorations for the visible content
  */
 function buildDecorations(view: EditorView): DecorationSet {
+    // Efficient O(1) mode check at the start
+    const mode = view.state.field(modeField);
+
+    // In source mode, return empty decorations (no WYSIWYG rendering)
+    if (mode === 'source') {
+        return Decoration.none;
+    }
+
     const decos: DecoEntry[] = [];
     const doc = view.state.doc;
 
     // Get the line containing the cursor
-    const cursorLine = doc.lineAt(view.state.selection.main.head).number;
+    // In read mode, we use -1 so no line is ever "active" (always hide syntax)
+    const cursorLine = mode === 'read'
+        ? -1
+        : doc.lineAt(view.state.selection.main.head).number;
 
     // Collect code ranges during the main tree walk (single iteration optimization)
     const codeRanges: CodeRange[] = [];
@@ -741,7 +753,12 @@ const wysiwygPlugin = ViewPlugin.fromClass(
         }
 
         update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged) {
+            // Check if mode changed by comparing previous and current state
+            const prevMode = update.startState.field(modeField, false);
+            const currMode = update.state.field(modeField, false);
+            const modeChanged = prevMode !== currMode;
+
+            if (update.docChanged || update.viewportChanged || modeChanged) {
                 this.decorations = buildDecorations(update.view);
                 this.lastCursorLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
             } else if (update.selectionSet) {

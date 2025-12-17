@@ -15,6 +15,7 @@ import { calloutExtension } from '../extensions/callout';
 import { tagExtension } from '../extensions/tag';
 import { imageEmbedExtension } from '../extensions/imageEmbed';
 import { createEditorTheme, codeHighlightStyle } from './theme';
+import { EditorMode, createModeExtension, updateMode, modeField } from './mode';
 
 /**
  * Configuration for creating an editor instance
@@ -24,8 +25,15 @@ export interface EditorConfig {
     doc?: string;
     /** Placeholder text */
     placeholder?: string;
-    /** Make editor read-only */
+    /** Make editor read-only (deprecated: use mode='read' instead) */
     readOnly?: boolean;
+    /**
+     * Editor mode:
+     * - 'live': WYSIWYG editing with cursor-reveal (default)
+     * - 'source': Raw markdown with syntax highlighting only
+     * - 'read': Read-only rendered preview
+     */
+    mode?: EditorMode;
     /** Additional extensions */
     extensions?: Extension[];
     /** Callback when document changes */
@@ -68,6 +76,7 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
         doc = '',
         placeholder = '',
         readOnly = false,
+        mode = 'live',
         extensions = [],
         onChange,
         onWikilinkClick,
@@ -76,8 +85,14 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
         tagInteraction,
     } = config;
 
+    // Determine effective read-only state: explicit readOnly OR read mode
+    const effectiveReadOnly = readOnly || mode === 'read';
+
     // Build extension array
     const editorExtensions: Extension[] = [
+        // Mode system (must be early so extensions can access it)
+        createModeExtension(mode),
+
         // Core editing
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
@@ -102,7 +117,7 @@ export function createEditor(parent: HTMLElement, config: EditorConfig = {}): Ed
         createEditorTheme(),
 
         // Read-only state (in compartment for dynamic updates)
-        readOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
+        readOnlyCompartment.of(EditorState.readOnly.of(effectiveReadOnly)),
 
         // Placeholder
         placeholder ? placeholderExt(placeholder) : [],

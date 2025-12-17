@@ -28,6 +28,7 @@ import {
 import { syntaxTree } from '@codemirror/language';
 import katex from 'katex';
 import { heightCacheEffect, mathCacheKey, getCachedHeight } from './heightCache';
+import { modeField } from '../core/mode';
 
 // Regex patterns for math - only match single-line expressions
 // Block math on a single line: $$...$$ (no newlines)
@@ -272,11 +273,22 @@ const mathSourceMark = Decoration.mark({ class: 'cm-math-source' });
  * accurate height information for scroll calculations.
  */
 const mathDecorations = EditorView.decorations.compute(
-    [mathCache, heightCache, 'selection'],  // heightCache added so we recompute with new cached heights
+    [mathCache, heightCache, 'selection', modeField],  // Added modeField to dependencies
     (state) => {
+        // Efficient O(1) mode check at the start
+        const mode = state.field(modeField);
+
+        // In source mode, return empty decorations (show raw markdown)
+        if (mode === 'source') {
+            return Decoration.none;
+        }
+
         const doc = state.doc;
         const cursorPos = state.selection.main.head;
-        const cursorLine = doc.lineAt(cursorPos).number;
+        // In read mode, use -1 so no line is ever "active" (always render math)
+        const cursorLine = mode === 'read'
+            ? -1
+            : doc.lineAt(cursorPos).number;
 
         // Get cached math positions
         const matches = state.field(mathCache);

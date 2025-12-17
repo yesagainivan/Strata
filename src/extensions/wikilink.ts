@@ -13,6 +13,7 @@ import {
     WidgetType,
 } from '@codemirror/view';
 import { collectCodeRanges, isInsideCode } from './utils';
+import { modeField } from '../core/mode';
 
 /**
  * Configuration for the wikilink extension
@@ -118,9 +119,20 @@ const wikilinkMark = Decoration.mark({ class: 'cm-wikilink-source' });
  * Build decorations for wikilinks
  */
 function buildWikilinkDecorations(view: EditorView): DecorationSet {
+    // Efficient O(1) mode check at the start
+    const mode = view.state.field(modeField);
+
+    // In source mode, return empty decorations (show raw markdown)
+    if (mode === 'source') {
+        return Decoration.none;
+    }
+
     const builder = new RangeSetBuilder<Decoration>();
     const doc = view.state.doc;
-    const cursorLine = doc.lineAt(view.state.selection.main.head).number;
+    // In read mode, use -1 so no line is ever "active" (always show rendered wikilinks)
+    const cursorLine = mode === 'read'
+        ? -1
+        : doc.lineAt(view.state.selection.main.head).number;
 
     // Pre-collect code ranges once (O(n) instead of O(n²))
     const codeRanges = collectCodeRanges(view);
@@ -169,7 +181,12 @@ const wikilinkPlugin = ViewPlugin.fromClass(
         }
 
         update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged) {
+            // Check if mode changed
+            const prevMode = update.startState.field(modeField, false);
+            const currMode = update.state.field(modeField, false);
+            const modeChanged = prevMode !== currMode;
+
+            if (update.docChanged || update.viewportChanged || modeChanged) {
                 this.decorations = buildWikilinkDecorations(update.view);
                 this.lastCursorLine = update.view.state.doc.lineAt(
                     update.view.state.selection.main.head

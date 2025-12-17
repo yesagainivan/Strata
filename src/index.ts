@@ -43,6 +43,8 @@ export type { CustomExtensionConfig, BlockExtensionConfig } from './api/extensio
 
 // Core utilities (for advanced users)
 export { createEditor, updateReadOnly, destroyEditor } from './core/editor';
+export { updateMode, modeField, getMode, createModeExtension } from './core/mode';
+export type { EditorMode } from './core/mode';
 export {
     createEditorTheme,
     createThemeStyles,
@@ -61,3 +63,4 @@ export {
     LIGHT_CODE,
     DARK_CODE,
 } from './core/theme';
+

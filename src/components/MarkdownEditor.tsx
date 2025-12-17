@@ -12,6 +12,7 @@ import React, {
 } from 'react';
 import { EditorView } from '@codemirror/view';
 import { createEditor, updateReadOnly } from '../core/editor';
+import { updateMode } from '../core/mode';
 import type { MarkdownEditorProps, MarkdownEditorHandle, WikilinkData } from '../types';
 
 /**
@@ -53,6 +54,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             extensions = [],
             placeholder = 'Start writing...',
             readOnly = false,
+            mode = 'live',
             className = '',
             onWikilinkClick,
             onTagClick,
@@ -110,6 +112,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                 doc: value ?? defaultValue,
                 placeholder,
                 readOnly,
+                mode,
                 extensions,
                 onChange: handleChange,
                 onWikilinkClick: handleWikilinkClick,
@@ -150,6 +153,16 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                 updateReadOnly(editorRef.current, readOnly);
             }
         }, [readOnly]);
+
+        // Update mode when it changes
+        useEffect(() => {
+            if (editorRef.current) {
+                updateMode(editorRef.current, mode);
+                // Also update read-only state for 'read' mode
+                const effectiveReadOnly = readOnly || mode === 'read';
+                updateReadOnly(editorRef.current, effectiveReadOnly);
+            }
+        }, [mode, readOnly]);
 
         // Expose imperative handle
         useImperativeHandle(
