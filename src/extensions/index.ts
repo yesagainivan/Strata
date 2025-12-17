@@ -5,3 +5,19 @@ export { tagExtension, type TagConfig } from './tag';
 export { mathExtension } from './math';
 export { tableExtension } from './table';
 export { imageEmbedExtension } from './imageEmbed';
+
+// Height cache infrastructure for widget height estimation
+export {
+    heightCache,
+    heightCacheEffect,
+    clearHeightCacheEffect,
+    getCachedHeight,
+    hasHeightCached,
+    getAllCachedHeights,
+    serializeHeightCache,
+    restoreHeightCache,
+    mathCacheKey,
+    imageCacheKey,
+    tableCacheKey,
+    type HeightCacheEntry,
+} from './heightCache';
