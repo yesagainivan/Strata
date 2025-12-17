@@ -5,8 +5,6 @@
 
 // Main component
 export { MarkdownEditor, default } from './components/MarkdownEditor';
-export { MarkdownPreview } from './components/MarkdownPreview';
-export type { MarkdownPreviewProps } from './components/MarkdownPreview';
 export { EditorErrorBoundary } from './components/EditorErrorBoundary';
 
 // Types

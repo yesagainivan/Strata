@@ -224,7 +224,6 @@ function buildCustomDecorations(
 
     const decos: Array<{ from: number; to: number; deco: Decoration }> = [];
     const doc = view.state.doc;
-    // In read mode (static preview), this code won't run since we use MarkdownPreview
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 
     // Pre-collect code ranges once (O(n) instead of O(n²))

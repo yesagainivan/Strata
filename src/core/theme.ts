@@ -828,6 +828,30 @@ const baseTheme = EditorView.baseTheme({
     '.cm-math-block .katex': {
         paddingBlock: '3px',
     },
+
+    // =========================================================================
+    // READ MODE STYLES (hide cursor, selection, active line)
+    // =========================================================================
+
+    // Hide cursor in read mode
+    '&.strata-read-mode .cm-cursor, &.strata-read-mode .cm-cursor-primary, &.strata-read-mode .cm-cursor-secondary': {
+        display: 'none !important',
+    },
+
+    // Remove active line highlight in read mode
+    '&.strata-read-mode .cm-activeLine': {
+        backgroundColor: 'transparent',
+    },
+
+    // Make selection invisible or subtle in read mode
+    '&.strata-read-mode .cm-selectionBackground, &.strata-read-mode ::selection': {
+        backgroundColor: 'transparent',
+    },
+
+    // Ensure content is not user-selectable in read mode (prevents text cursor)
+    '&.strata-read-mode .cm-content': {
+        cursor: 'default',
+    },
 });
 
 /**

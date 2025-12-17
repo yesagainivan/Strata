@@ -8,7 +8,7 @@
  */
 
 import { StateField, StateEffect, Extension, Compartment } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
+import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
 
 /**
  * Editor viewing/editing modes
@@ -84,6 +84,39 @@ export function updateMode(view: EditorView, mode: EditorMode): void {
 }
 
 /**
+ * ViewPlugin that toggles CSS classes based on current mode
+ * This enables mode-specific styling via CSS
+ */
+const modeClassPlugin = ViewPlugin.define(
+    (view) => {
+        const updateClasses = () => {
+            const mode = view.state.field(modeField);
+            const dom = view.dom;
+
+            // Remove all mode classes
+            dom.classList.remove('strata-live-mode', 'strata-source-mode', 'strata-read-mode');
+
+            // Add current mode class
+            dom.classList.add(`strata-${mode}-mode`);
+        };
+
+        // Set initial class
+        updateClasses();
+
+        return {
+            update(update: ViewUpdate) {
+                // Check if mode changed
+                const oldMode = update.startState.field(modeField);
+                const newMode = update.state.field(modeField);
+                if (oldMode !== newMode) {
+                    updateClasses();
+                }
+            },
+        };
+    }
+);
+
+/**
  * Create the mode extension bundle
  * 
  * @param initialMode - Starting mode (default: 'live')
@@ -91,5 +124,7 @@ export function updateMode(view: EditorView, mode: EditorMode): void {
 export function createModeExtension(initialMode: EditorMode = 'live'): Extension {
     return [
         modeField.init(() => initialMode),
+        modeClassPlugin,
     ];
 }
+

@@ -108,9 +108,7 @@ $$\mathbf{F} = m\mathbf{a} = m\frac{d^2\mathbf{x}}{dt^2}$$
 
 Strata supports embedded images with Obsidian syntax:
 
-![[https://generative-placeholders.stefanbohacek.com/image?width=300&height=300&style=cellular-automata&cells=4]]
-
-![[https://generative-placeholders.stefanbohacek.com/image?width=300&height=300&style=triangles&gap=300]]
+![[/src/assets/demo-image.svg|Demo placeholder image]]
 
 ---
 
