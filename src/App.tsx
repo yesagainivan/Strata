@@ -61,19 +61,17 @@ const embedExtension = createBlockExtension({
         </div>
       `;
     } else {
-      // Other URLs - styled link preview
-      container.style.cssText = "padding: 16px; background: var(--syntax-code-bg); border-radius: 8px; border: 1px solid var(--editor-gutter-bg);";
+      // Other URLs - compact styled link preview
       container.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 24px;">🔗</span>
-          <div>
-            <div style="font-size: 0.85em; color: var(--editor-gutter-text); margin-bottom: 4px;">External Link</div>
-            <a href="${url}" target="_blank" rel="noopener noreferrer" 
-               style="color: var(--wikilink-color); word-break: break-all; text-decoration: none; font-weight: 500;">
-              ${url}
-            </a>
-          </div>
-        </div>
+        <a href="${url}" target="_blank" rel="noopener noreferrer" 
+           style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; 
+                  background: var(--syntax-code-bg); border-radius: 6px; 
+                  border: 1px solid var(--editor-gutter-bg);
+                  color: var(--wikilink-color); text-decoration: none; 
+                  font-size: 0.9em; max-width: 100%; box-sizing: border-box;">
+          <span style="flex-shrink: 0;">🔗</span>
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${url}</span>
+        </a>
       `;
     }
 
