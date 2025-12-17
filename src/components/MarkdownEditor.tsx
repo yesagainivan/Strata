@@ -13,6 +13,7 @@ import React, {
 import { EditorView } from '@codemirror/view';
 import { createEditor, updateReadOnly } from '../core/editor';
 import { updateMode } from '../core/mode';
+import { MarkdownPreview } from './MarkdownPreview';
 import type { MarkdownEditorProps, MarkdownEditorHandle, WikilinkData } from '../types';
 
 /**
@@ -235,11 +236,39 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             []
         );
 
+        // In read mode, render static preview instead of CodeMirror
+        // But always render BOTH to preserve CodeMirror state when switching back
+        const handlePreviewWikilinkClick = (target: string, event: React.MouseEvent) => {
+            if (callbacksRef.current.onWikilinkClick) {
+                const data = parseWikilinkData(target);
+                callbacksRef.current.onWikilinkClick(data, event.nativeEvent);
+            }
+        };
+
+        const handlePreviewTagClick = (tag: string, event: React.MouseEvent) => {
+            if (callbacksRef.current.onTagClick) {
+                callbacksRef.current.onTagClick(tag, event.nativeEvent);
+            }
+        };
+
         return (
-            <div
-                ref={containerRef}
-                className={`markdown-editor ${className}`.trim()}
-            />
+            <>
+                {/* Editor - hidden in read mode but still mounted */}
+                <div
+                    ref={containerRef}
+                    className={`markdown-editor ${className}`.trim()}
+                    style={{ display: mode === 'read' ? 'none' : undefined }}
+                />
+                {/* Preview - only rendered/visible in read mode */}
+                {mode === 'read' && (
+                    <MarkdownPreview
+                        content={value ?? defaultValue}
+                        className={`markdown-editor ${className}`.trim()}
+                        onWikilinkClick={handlePreviewWikilinkClick}
+                        onTagClick={handlePreviewTagClick}
+                    />
+                )}
+            </>
         );
     }
 );

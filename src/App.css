@@ -40,6 +40,7 @@ html,
 body,
 #root {
   height: 100%;
+  overflow: hidden;
 }
 
 .app {
@@ -385,3 +386,101 @@ body,
     display: none;
   }
 }
+
+/* ============================================
+   Markdown Preview (Read Mode)
+   ============================================ */
+.markdown-preview {
+  padding: var(--editor-content-padding, 16px);
+  max-width: var(--editor-content-max-width, 800px);
+  margin: 0 auto;
+  font-family: var(--editor-font-family, 'Inter', sans-serif);
+  font-size: var(--editor-font-size, 16px);
+  line-height: var(--editor-line-height, 1.6);
+  color: var(--editor-text, #1f2937);
+  overflow-y: auto;
+  height: 100%;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+
+.markdown-preview h1 {
+  font-size: var(--heading-1-size, 2em);
+}
+
+.markdown-preview h2 {
+  font-size: var(--heading-2-size, 1.5em);
+}
+
+.markdown-preview h3 {
+  font-size: var(--heading-3-size, 1.25em);
+}
+
+.markdown-preview p {
+  margin-bottom: 1em;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.markdown-preview blockquote {
+  border-left: 4px solid var(--table-border, #e5e7eb);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--app-text-muted, #6b7280);
+}
+
+.markdown-preview pre {
+  background: var(--syntax-code-bg, #f1f5f9);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.markdown-preview code {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+
+.markdown-preview th,
+.markdown-preview td {
+  border: 1px solid var(--table-border, #e5e7eb);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-preview th {
+  background: var(--table-header-bg, #f1f5f9);
+  font-weight: 600;
+}
+
+/* Mode toggle active state */
+.mode-selector button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* 
+ * Note: Callout preview styles, markdown preview styles, and KaTeX fixes 
+ * are now bundled in theme.ts for library users. The styles below are
+ * demo-specific or legacy and can be removed once confirmed working.
+ */

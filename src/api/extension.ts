@@ -14,6 +14,7 @@ import {
 } from '@codemirror/view';
 import { collectCodeRanges, isInsideCode } from '../extensions/utils';
 import { heightCacheEffect, getCachedHeight, heightCache } from '../extensions/heightCache';
+import { modeField } from '../core/mode';
 
 /**
  * Configuration for a custom markdown extension
@@ -215,8 +216,15 @@ function buildCustomDecorations(
     view: EditorView,
     config: CustomExtensionConfig
 ): DecorationSet {
+    // Mode-aware: skip decorations in source mode
+    const mode = view.state.field(modeField, false);
+    if (mode === 'source') {
+        return Decoration.none;
+    }
+
     const decos: Array<{ from: number; to: number; deco: Decoration }> = [];
     const doc = view.state.doc;
+    // In read mode (static preview), this code won't run since we use MarkdownPreview
     const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 
     // Pre-collect code ranges once (O(n) instead of O(n²))
@@ -319,7 +327,12 @@ function createCustomPlugin(config: CustomExtensionConfig): Extension {
             }
 
             update(update: ViewUpdate) {
-                if (update.docChanged || update.viewportChanged || update.selectionSet) {
+                // Check for mode changes
+                const prevMode = update.startState.field(modeField, false);
+                const currMode = update.state.field(modeField, false);
+                const modeChanged = prevMode !== currMode;
+
+                if (update.docChanged || update.viewportChanged || update.selectionSet || modeChanged) {
                     this.decorations = buildCustomDecorations(update.view, config);
                 }
             }
@@ -568,8 +581,14 @@ export function createBlockExtension(config: BlockExtensionConfig): Extension {
 
     // Decorations computed from state
     const blockDecorations = EditorView.decorations.compute(
-        [blockCache, heightCache, 'selection'],
+        [blockCache, heightCache, 'selection', modeField],
         (state) => {
+            // Mode-aware: skip decorations in source mode
+            const mode = state.field(modeField, false);
+            if (mode === 'source') {
+                return Decoration.none;
+            }
+
             const blocks = state.field(blockCache);
             const cursorPos = state.selection.main.head;
             const cursorLine = state.doc.lineAt(cursorPos).number;

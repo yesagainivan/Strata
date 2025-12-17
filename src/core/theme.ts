@@ -600,9 +600,234 @@ const baseTheme = EditorView.baseTheme({
         cursor: 'pointer',
     },
 
-    // Note: Callout styles are defined in the callout extension itself
+    // Note: Callout editor styles are defined in the callout extension itself
     // to keep the extension self-contained. CSS variables for callout colors
     // are defined in lightThemeVars and darkThemeVars above.
+
+    // =========================================================================
+    // MARKDOWN PREVIEW STYLES (bundled with library for read mode)
+    // =========================================================================
+
+    // Base preview container
+    '.markdown-preview': {
+        fontFamily: 'var(--editor-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
+        fontSize: 'var(--editor-font-size, 16px)',
+        lineHeight: 'var(--editor-line-height, 1.6)',
+        color: 'var(--editor-text)',
+        background: 'var(--editor-bg)',
+        padding: 'var(--editor-content-padding, 16px)',
+        maxWidth: 'var(--editor-content-max-width, 800px)',
+        margin: '0 auto',
+        overflowY: 'auto',
+        height: '100%',
+    },
+
+    '.markdown-preview h1, .markdown-preview h2, .markdown-preview h3, .markdown-preview h4, .markdown-preview h5, .markdown-preview h6': {
+        marginTop: '1.5em',
+        marginBottom: '0.5em',
+        fontWeight: '600',
+        color: 'var(--syntax-heading)',
+    },
+    '.markdown-preview h1': { fontSize: 'var(--heading-1-size, 2em)' },
+    '.markdown-preview h2': { fontSize: 'var(--heading-2-size, 1.5em)' },
+    '.markdown-preview h3': { fontSize: 'var(--heading-3-size, 1.25em)' },
+
+    '.markdown-preview p': { marginBottom: '1em' },
+    '.markdown-preview ul, .markdown-preview ol': { marginBottom: '1em', paddingLeft: '1.5em' },
+    '.markdown-preview blockquote': {
+        borderLeft: '4px solid var(--syntax-blockquote)',
+        paddingLeft: '1em',
+        margin: '1em 0',
+        color: 'var(--syntax-blockquote)',
+    },
+
+    '.markdown-preview pre': {
+        background: 'var(--syntax-code-bg)',
+        padding: '12px',
+        borderRadius: '6px',
+        overflowX: 'auto',
+        margin: '1em 0',
+    },
+    '.markdown-preview code': {
+        fontFamily: '"SF Mono", Monaco, "Cascadia Code", monospace',
+        fontSize: '0.9em',
+    },
+
+    // Preview tables
+    '.markdown-preview table': { borderCollapse: 'collapse', width: '100%', margin: '1em 0' },
+    '.markdown-preview th, .markdown-preview td': {
+        border: '1px solid var(--table-border)',
+        padding: '8px 12px',
+        textAlign: 'left',
+    },
+    '.markdown-preview th': { background: 'var(--table-header-bg)', fontWeight: '600' },
+
+    // Preview wikilinks
+    '.markdown-preview .cm-wikilink': {
+        color: 'var(--wikilink-color)',
+        cursor: 'pointer',
+        borderBottom: '1px dashed var(--wikilink-color)',
+        '&:hover': { color: 'var(--wikilink-hover)' },
+    },
+
+    // Preview tags
+    '.markdown-preview .cm-tag': {
+        color: 'var(--tag-color)',
+        backgroundColor: 'var(--tag-bg)',
+        padding: '1px 6px',
+        borderRadius: '10px',
+        fontSize: '0.9em',
+        cursor: 'pointer',
+    },
+
+    // Preview highlights
+    '.markdown-preview .cm-highlight': {
+        backgroundColor: 'var(--syntax-highlight-bg)',
+        color: 'var(--syntax-highlight-text)',
+        padding: '0 2px',
+        borderRadius: '2px',
+    },
+
+    // =========================================================================
+    // CALLOUT PREVIEW STYLES
+    // =========================================================================
+
+    '.cm-callout-preview': {
+        borderRadius: '6px',
+        padding: '0',
+        margin: '1em 0',
+        borderLeft: '4px solid',
+        overflow: 'hidden',
+    },
+
+    // Each callout type using its specific theme variables
+    '.cm-callout-preview.cm-callout-note': {
+        background: 'var(--callout-note-bg)',
+        borderColor: 'var(--callout-note-border)',
+    },
+    '.cm-callout-preview.cm-callout-info': {
+        background: 'var(--callout-info-bg)',
+        borderColor: 'var(--callout-info-border)',
+    },
+    '.cm-callout-preview.cm-callout-warning': {
+        background: 'var(--callout-warning-bg)',
+        borderColor: 'var(--callout-warning-border)',
+    },
+    '.cm-callout-preview.cm-callout-danger': {
+        background: 'var(--callout-danger-bg)',
+        borderColor: 'var(--callout-danger-border)',
+    },
+    '.cm-callout-preview.cm-callout-success': {
+        background: 'var(--callout-success-bg)',
+        borderColor: 'var(--callout-success-border)',
+    },
+    '.cm-callout-preview.cm-callout-tip': {
+        background: 'var(--callout-tip-bg)',
+        borderColor: 'var(--callout-tip-border)',
+    },
+    '.cm-callout-preview.cm-callout-question': {
+        background: 'var(--callout-question-bg)',
+        borderColor: 'var(--callout-question-border)',
+    },
+    '.cm-callout-preview.cm-callout-quote': {
+        background: 'var(--callout-quote-bg)',
+        borderColor: 'var(--callout-quote-border)',
+    },
+    '.cm-callout-preview.cm-callout-example': {
+        background: 'var(--callout-example-bg)',
+        borderColor: 'var(--callout-example-border)',
+    },
+    '.cm-callout-preview.cm-callout-bug': {
+        background: 'var(--callout-bug-bg)',
+        borderColor: 'var(--callout-bug-border)',
+    },
+
+    // Callout header
+    '.cm-callout-header-preview': {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        fontWeight: '600',
+        padding: '8px 12px',
+    },
+
+    // Header colors per type (each using its specific variable)
+    '.cm-callout-note .cm-callout-header-preview': {
+        color: 'var(--callout-header-note)',
+    },
+    '.cm-callout-info .cm-callout-header-preview': {
+        color: 'var(--callout-header-info)',
+    },
+    '.cm-callout-warning .cm-callout-header-preview': {
+        color: 'var(--callout-header-warning)',
+    },
+    '.cm-callout-danger .cm-callout-header-preview': {
+        color: 'var(--callout-header-danger)',
+    },
+    '.cm-callout-success .cm-callout-header-preview': {
+        color: 'var(--callout-header-success)',
+    },
+    '.cm-callout-tip .cm-callout-header-preview': {
+        color: 'var(--callout-header-tip)',
+    },
+    '.cm-callout-question .cm-callout-header-preview': {
+        color: 'var(--callout-header-question)',
+    },
+    '.cm-callout-quote .cm-callout-header-preview': {
+        color: 'var(--callout-header-quote)',
+    },
+    '.cm-callout-example .cm-callout-header-preview': {
+        color: 'var(--callout-header-example)',
+    },
+    '.cm-callout-bug .cm-callout-header-preview': {
+        color: 'var(--callout-header-bug)',
+    },
+
+    // SVG icon sizing
+    '.cm-callout-icon-preview': {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '18px',
+        height: '18px',
+        flexShrink: '0',
+    },
+    '.cm-callout-icon-preview svg': {
+        width: '100%',
+        height: '100%',
+    },
+
+    // Callout body
+    '.cm-callout-preview .cm-callout-content': {
+        padding: '8px 12px',
+        fontSize: '0.95em',
+        lineHeight: '1.5',
+    },
+    '.cm-callout-preview .cm-callout-content p:first-child': { marginTop: '0' },
+    '.cm-callout-preview .cm-callout-content p:last-child': { marginBottom: '0' },
+
+    // =========================================================================
+    // KATEX FIXES (prevents extra vertical height/scrolling)
+    // =========================================================================
+
+    '.katex-display': {
+        overflow: 'auto hidden',
+        maxWidth: '100%',
+    },
+    '.katex-display > .katex': {
+        maxWidth: '100%',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        whiteSpace: 'normal',
+        paddingBlock: '3px',
+    },
+    '.cm-math-block': {
+        overflow: 'auto hidden',
+        maxWidth: '100%',
+    },
+    '.cm-math-block .katex': {
+        paddingBlock: '3px',
+    },
 });
 
 /**
