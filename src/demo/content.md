@@ -195,6 +195,10 @@ This YouTube embed uses `createBlockExtension` with true CM6 block support:
 
 ::embed[https://youtu.be/PqVbypvxDto]
 
+Or this GitHub embed:
+
+::embed[https://github.com/yesagainivan/Strata]
+
 ```typescript
 const mentionExtension = createExtension({
   name: 'mention',
