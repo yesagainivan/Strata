@@ -10,8 +10,10 @@ import {
     DecorationSet,
     EditorView,
     WidgetType,
+    Rect,
 } from '@codemirror/view';
 import katex from 'katex';
+import { heightCacheEffect, tableCacheKey, getCachedHeight, heightCache } from './heightCache';
 
 // Table separator pattern: matches |---|---|---| with any number of columns
 const TABLE_SEPARATOR_REGEX = /^\|?(\s*:?-+:?\s*\|)+\s*:?-*:?\s*\|?$/;
@@ -260,31 +262,40 @@ function findTablesInRange(
  * Widget that renders a table as HTML
  */
 class TableWidget extends WidgetType {
-    constructor(private table: TableBlock) {
+    private cacheKey: string;
+    private cachedHeight: number | null = null;
+
+    constructor(
+        private table: TableBlock,
+        cachedHeight?: number
+    ) {
         super();
+        const rowCount = 1 + table.bodyRows.length;
+        this.cacheKey = tableCacheKey(table.from, rowCount);
+        this.cachedHeight = cachedHeight ?? null;
     }
 
     /**
      * Estimated height for CodeMirror viewport calculations
-     * This helps prevent scroll "gaps" by giving CM6 a height estimate
-     * before the widget is actually rendered.
      * 
-     * CSS analysis:
-     * - Cell padding: 8px top + 8px bottom = 16px
-     * - Font size: 0.9em (~14px) with default line-height
-     * - Border: 1px per row
-     * - Container margin: 4px top + 4px bottom = 8px
+     * Priority:
+     * 1. Use cached height from previous render (most accurate)
+     * 2. Use formula-based estimate (calibrated from measurements)
      * 
-     * Each row is roughly 16px (padding) + 16px (content) + 1px (border) ≈ 33px
-     * Using 34px as a conservative estimate per row
+     * Measured values (from debug logging):
+     * - 4 rows: 161.125px → 40.28px per row (includes all margins/padding)
+     * - Formula: rowCount * 40 (margin already included in per-row value)
      */
     get estimatedHeight(): number {
-        // Header row + body rows, each ~34px, plus 8px container margin
+        if (this.cachedHeight !== null) {
+            return this.cachedHeight;
+        }
+        // Header row + body rows, each ~40px (calibrated, includes container margin)
         const rowCount = 1 + this.table.bodyRows.length;
-        return rowCount * 34 + 8;
+        return rowCount * 40;  // Was +8, but that's included in per-row measurement
     }
 
-    toDOM(): HTMLElement {
+    toDOM(view: EditorView): HTMLElement {
         const wrapper = document.createElement('div');
         wrapper.className = 'cm-table-widget';
 
@@ -323,7 +334,34 @@ class TableWidget extends WidgetType {
         table.appendChild(tbody);
 
         wrapper.appendChild(table);
+
+        // Measure height after render and cache it
+        // Skip if we already have an accurate cached value (prevents redundant dispatches)
+        if (this.cachedHeight === null) {
+            requestAnimationFrame(() => {
+                const height = wrapper.getBoundingClientRect().height;
+                if (height > 0) {
+                    view.dispatch({
+                        effects: heightCacheEffect.of({
+                            key: this.cacheKey,
+                            height,
+                        }),
+                    });
+                    // Tell CM6 to recalculate its internal height map
+                    view.requestMeasure();
+                }
+            });
+        }
+
         return wrapper;
+    }
+
+    /**
+     * Coordinate mapping for table widgets
+     * Helps CodeMirror accurately calculate scroll positions
+     */
+    coordsAt(dom: HTMLElement, pos: number, side: number): Rect | null {
+        return dom.getBoundingClientRect();
     }
 
     eq(other: TableWidget): boolean {
@@ -358,7 +396,7 @@ const tableCache = StateField.define<TableBlock[]>({
  * Only creates decorations based on cursor position, doesn't re-scan entire doc
  */
 const tableDecorations = EditorView.decorations.compute(
-    [tableCache, 'selection'],
+    [tableCache, heightCache, 'selection'],  // heightCache added so we recompute with new cached heights
     (state) => {
         const doc = state.doc;
         const cursorPos = state.selection.main.head;
@@ -372,12 +410,20 @@ const tableDecorations = EditorView.decorations.compute(
             const isEditing = cursorPos >= table.from && cursorPos <= table.to;
 
             if (!isEditing) {
+                // Get cached height for this table
+                const rowCount = 1 + table.bodyRows.length;
+                const cacheKey = tableCacheKey(table.from, rowCount);
+                const cachedHeight = getCachedHeight(state, cacheKey, -1);
+
                 // Add widget at the start of the table
                 allDecos.push({
                     from: table.from,
                     to: table.from,
                     deco: Decoration.widget({
-                        widget: new TableWidget(table),
+                        widget: new TableWidget(
+                            table,
+                            cachedHeight > 0 ? cachedHeight : undefined
+                        ),
                         block: true,
                         side: -1,
                     }),
@@ -421,7 +467,9 @@ const tableTheme = EditorView.baseTheme({
     },
     '.cm-table-widget': {
         display: 'block',
-        margin: '4px 0',
+        // NOTE: Using padding instead of margin because external margins
+        // on block widgets confuse CM6's height map, causing scroll jumps
+        padding: '4px 0',
         overflowX: 'auto',
     },
     '.cm-rendered-table': {
@@ -465,6 +513,11 @@ const tableTheme = EditorView.baseTheme({
  * Table extension with Obsidian-style rendering
  */
 export function tableExtension(): Extension {
-    return [tableCache, tableDecorations, tableTheme];
+    return [
+        heightCache,      // Include height cache (deduplicated if already present)
+        tableCache,       // StateField for table positions
+        tableDecorations, // Computed decorations
+        tableTheme,       // Styling
+    ];
 }
 

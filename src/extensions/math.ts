@@ -4,19 +4,30 @@
  * Supports:
  * - Inline math: $x^2$ or \(x^2\)
  * - Block math: $$\sum_{i=1}^{n}$$ or \[\sum_{i=1}^{n}\]
+ * 
+ * ## Architecture
+ * 
+ * This extension uses a StateField-based approach for correct height estimation:
+ * 
+ * 1. `mathCache` StateField stores all math positions in the document
+ * 2. `mathDecorations` uses EditorView.decorations.compute() to build decorations
+ * 3. `MathWidget` measures its height after render and updates the heightCache
+ * 
+ * This ensures CodeMirror's height map is accurate BEFORE viewport computation,
+ * eliminating scroll jumping.
  */
 
-import { Extension, RangeSetBuilder } from '@codemirror/state';
+import { Extension, RangeSetBuilder, StateField } from '@codemirror/state';
 import {
     Decoration,
     DecorationSet,
     EditorView,
-    ViewPlugin,
-    ViewUpdate,
     WidgetType,
+    Rect,
 } from '@codemirror/view';
-import { collectCodeRanges, isInsideCode } from './utils';
+import { syntaxTree } from '@codemirror/language';
 import katex from 'katex';
+import { heightCacheEffect, mathCacheKey, getCachedHeight } from './heightCache';
 
 // Regex patterns for math - only match single-line expressions
 // Block math on a single line: $$...$$ (no newlines)
@@ -24,6 +35,9 @@ import katex from 'katex';
 const INLINE_MATH_REGEX = /\$([^\$\n]+)\$/g;
 const BLOCK_MATH_SINGLE_LINE_REGEX = /\$\$([^\$\n]+)\$\$/g;
 
+/**
+ * Represents a math expression found in the document
+ */
 interface MathMatch {
     tex: string;
     from: number;
@@ -32,26 +46,63 @@ interface MathMatch {
 }
 
 /**
- * Find all math expressions in text (single-line only to avoid CM6 errors)
+ * Check if a position is inside a code block or inline code
+ * Uses the syntax tree for accurate detection
  */
-function findMathExpressions(text: string, offset: number): MathMatch[] {
+function isInsideCodeNode(from: number, to: number, state: { tree: ReturnType<typeof syntaxTree> }): boolean {
+    let insideCode = false;
+    state.tree.iterate({
+        from,
+        to,
+        enter(node) {
+            const name = node.name;
+            if (
+                name === 'CodeBlock' ||
+                name === 'FencedCode' ||
+                name === 'InlineCode' ||
+                name === 'CodeText'
+            ) {
+                insideCode = true;
+                return false; // Stop iteration
+            }
+        },
+    });
+    return insideCode;
+}
+
+/**
+ * Find all math expressions in the entire document
+ * This is called once per document change, not per viewport change
+ */
+function findAllMathInDocument(doc: { toString: () => string; length: number }, tree: ReturnType<typeof syntaxTree>): MathMatch[] {
+    const text = doc.toString();
     const matches: MathMatch[] = [];
+
+    // Reset regex state
+    BLOCK_MATH_SINGLE_LINE_REGEX.lastIndex = 0;
+    INLINE_MATH_REGEX.lastIndex = 0;
 
     // Find single-line block math first
     let match;
     while ((match = BLOCK_MATH_SINGLE_LINE_REGEX.exec(text)) !== null) {
-        matches.push({
-            tex: match[1],
-            from: offset + match.index,
-            to: offset + match.index + match[0].length,
-            isBlock: true,
-        });
+        const from = match.index;
+        const to = match.index + match[0].length;
+
+        // Skip if inside code
+        if (!isInsideCodeNode(from, to, { tree })) {
+            matches.push({
+                tex: match[1],
+                from,
+                to,
+                isBlock: true,
+            });
+        }
     }
 
     // Find inline math
     while ((match = INLINE_MATH_REGEX.exec(text)) !== null) {
-        const from = offset + match.index;
-        const to = offset + match.index + match[0].length;
+        const from = match.index;
+        const to = match.index + match[0].length;
         const matchText = match[0];
 
         // Skip if this looks like block math (starts/ends with $$)
@@ -61,7 +112,10 @@ function findMathExpressions(text: string, offset: number): MathMatch[] {
 
         // Skip if this overlaps with a block math
         const overlaps = matches.some(m => from >= m.from && to <= m.to);
-        if (!overlaps) {
+        if (overlaps) continue;
+
+        // Skip if inside code
+        if (!isInsideCodeNode(from, to, { tree })) {
             matches.push({
                 tex: match[1],
                 from,
@@ -75,33 +129,78 @@ function findMathExpressions(text: string, offset: number): MathMatch[] {
 }
 
 /**
+ * StateField to cache math positions
+ * Only re-parses when the document changes
+ */
+const mathCache = StateField.define<MathMatch[]>({
+    create(state) {
+        const tree = syntaxTree(state);
+        return findAllMathInDocument(state.doc, tree);
+    },
+    update(matches, tr) {
+        if (!tr.docChanged) {
+            return matches; // Return cached matches if document hasn't changed
+        }
+        // Re-parse math positions when document changes
+        const tree = syntaxTree(tr.state);
+        return findAllMathInDocument(tr.state.doc, tree);
+    },
+});
+
+/**
  * Widget for rendered math
  * Uses lazy rendering - KaTeX is only invoked when the widget is actually displayed
  */
 class MathWidget extends WidgetType {
+    private cacheKey: string;
+    private cachedHeight: number | null = null;
+
     constructor(
         private tex: string,
-        private isBlock: boolean
+        private isBlock: boolean,
+        cachedHeight?: number
     ) {
         super();
+        this.cacheKey = mathCacheKey(tex, isBlock);
+        this.cachedHeight = cachedHeight ?? null;
     }
 
     /**
      * Estimated height for CodeMirror viewport calculations.
-     * This helps prevent scroll "gaps" by giving CM6 a height estimate
-     * before the math is actually rendered by KaTeX.
      * 
-     * Based on real measurements:
-     * - Block math: ~112px total (56px content + padding/margin from CSS)
-     * - Inline math: ~20px (constrained by line height)
+     * Priority:
+     * 1. Use cached height from previous render (most accurate)
+     * 2. Use heuristic based on content complexity
      */
     get estimatedHeight(): number {
-        // Block math: Based on measurement, actual rendered height is ~112px
-        // Using 100px as a slightly conservative estimate
-        return this.isBlock ? 100 : 20;
+        // If we have a cached measurement, use it
+        if (this.cachedHeight !== null) {
+            return this.cachedHeight;
+        }
+
+        // Inline math: constrained to line height
+        if (!this.isBlock) {
+            return 20;
+        }
+
+        // Block math: calibrated estimates based on measured values
+        // Measured: sum=112.7px, int=102.25px, physics=98.15px
+        // All these have complex symbols (frac, sum, int)
+        const lineCount = this.tex.split('\n').length;
+        const hasComplexSymbols = /\\(frac|sum|int|prod|lim|matrix|begin)/.test(this.tex);
+
+        // Calibrated base height + per-line + complexity
+        let estimate = 80; // Base block math height (calibrated)
+        estimate += (lineCount - 1) * 24; // ~24px per additional line
+        if (hasComplexSymbols) {
+            estimate += 20; // Complex symbols add ~20px (measured: 98-112px total)
+        }
+
+        return estimate;
     }
 
-    toDOM(): HTMLElement {
+    toDOM(view: EditorView): HTMLElement {
+
         const wrapper = document.createElement(this.isBlock ? 'div' : 'span');
         wrapper.className = this.isBlock ? 'cm-math-block' : 'cm-math-inline';
         // Prevent cursor from entering widget and causing selection issues
@@ -121,7 +220,34 @@ class MathWidget extends WidgetType {
             wrapper.title = e instanceof Error ? e.message : 'Invalid LaTeX';
         }
 
+        // Schedule height measurement after browser paint (block math only)
+        // Skip if we already have an accurate cached value (prevents redundant dispatches)
+        if (this.isBlock && this.cachedHeight === null) {
+            requestAnimationFrame(() => {
+                const height = wrapper.getBoundingClientRect().height;
+                if (height > 0) {
+                    view.dispatch({
+                        effects: heightCacheEffect.of({
+                            key: this.cacheKey,
+                            height,
+                        }),
+                    });
+                    // Tell CM6 to recalculate its internal height map
+                    view.requestMeasure();
+                }
+            });
+        }
+
         return wrapper;
+    }
+
+    /**
+     * Coordinate mapping for large block widgets
+     * Helps CodeMirror accurately calculate scroll positions
+     */
+    coordsAt(dom: HTMLElement, pos: number, side: number): Rect | null {
+        if (!this.isBlock) return null;
+        return dom.getBoundingClientRect();
     }
 
     eq(other: MathWidget): boolean {
@@ -138,32 +264,32 @@ class MathWidget extends WidgetType {
  */
 const mathSourceMark = Decoration.mark({ class: 'cm-math-source' });
 
-interface DecoEntry {
-    from: number;
-    to: number;
-    deco: Decoration;
-}
-
-
 /**
- * Build math decorations
+ * Computed decorations using StateField-cached positions
+ * 
+ * This is the key change: using EditorView.decorations.compute() instead of ViewPlugin
+ * ensures decorations are computed BEFORE viewport calculation, giving CM6
+ * accurate height information for scroll calculations.
  */
-function buildMathDecorations(view: EditorView): DecorationSet {
-    const decos: DecoEntry[] = [];
-    const doc = view.state.doc;
-    const cursorLine = doc.lineAt(view.state.selection.main.head).number;
+const mathDecorations = EditorView.decorations.compute(
+    [mathCache, heightCache, 'selection'],  // heightCache added so we recompute with new cached heights
+    (state) => {
+        const doc = state.doc;
+        const cursorPos = state.selection.main.head;
+        const cursorLine = doc.lineAt(cursorPos).number;
 
-    // Pre-collect code ranges once (O(n) instead of O(n²))
-    const codeRanges = collectCodeRanges(view);
+        // Get cached math positions
+        const matches = state.field(mathCache);
 
-    for (const { from, to } of view.visibleRanges) {
-        const text = doc.sliceString(from, to);
-        const matches = findMathExpressions(text, from);
+        interface DecoEntry {
+            from: number;
+            to: number;
+            deco: Decoration;
+        }
+
+        const decos: DecoEntry[] = [];
 
         for (const match of matches) {
-            // Simple range check instead of tree iteration per match
-            if (isInsideCode(match.from, match.to, codeRanges)) continue;
-
             const matchLine = doc.lineAt(match.from).number;
             const isActiveLine = matchLine === cursorLine;
 
@@ -175,60 +301,33 @@ function buildMathDecorations(view: EditorView): DecorationSet {
                     deco: mathSourceMark,
                 });
             } else {
-                // Replace with rendered math
+                // Get cached height for this math expression
+                const cacheKey = mathCacheKey(match.tex, match.isBlock);
+                const cachedHeight = getCachedHeight(state, cacheKey, -1);
+
+                // Replace with rendered math widget
                 decos.push({
                     from: match.from,
                     to: match.to,
                     deco: Decoration.replace({
-                        widget: new MathWidget(match.tex, match.isBlock),
+                        widget: new MathWidget(
+                            match.tex,
+                            match.isBlock,
+                            cachedHeight > 0 ? cachedHeight : undefined
+                        ),
                     }),
                 });
             }
         }
-    }
 
-    // Sort by position
-    decos.sort((a, b) => a.from - b.from || a.to - b.to);
+        // Sort by position (required for RangeSetBuilder)
+        decos.sort((a, b) => a.from - b.from || a.to - b.to);
 
-    const builder = new RangeSetBuilder<Decoration>();
-    for (const { from, to, deco } of decos) {
-        builder.add(from, to, deco);
-    }
-    return builder.finish();
-}
-
-/**
- * View plugin for math rendering
- */
-const mathPlugin = ViewPlugin.fromClass(
-    class {
-        decorations: DecorationSet;
-        lastCursorLine: number;
-
-        constructor(view: EditorView) {
-            this.decorations = buildMathDecorations(view);
-            this.lastCursorLine = view.state.doc.lineAt(view.state.selection.main.head).number;
+        const builder = new RangeSetBuilder<Decoration>();
+        for (const { from, to, deco } of decos) {
+            builder.add(from, to, deco);
         }
-
-        update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged) {
-                this.decorations = buildMathDecorations(update.view);
-                this.lastCursorLine = update.view.state.doc.lineAt(
-                    update.view.state.selection.main.head
-                ).number;
-            } else if (update.selectionSet) {
-                const newLine = update.view.state.doc.lineAt(
-                    update.view.state.selection.main.head
-                ).number;
-                if (newLine !== this.lastCursorLine) {
-                    this.decorations = buildMathDecorations(update.view);
-                    this.lastCursorLine = newLine;
-                }
-            }
-        }
-    },
-    {
-        decorations: (v) => v.decorations,
+        return builder.finish();
     }
 );
 
@@ -243,8 +342,9 @@ const mathTheme = EditorView.baseTheme({
     '.cm-math-block': {
         display: 'block',
         textAlign: 'center',
-        padding: '12px 0',
-        margin: '8px 0',
+        // NOTE: Using padding only (no margin) because external margins
+        // on block widgets confuse CM6's height map, causing scroll jumps
+        padding: '16px 0',  // Was: padding 12px + margin 8px = 20px total
         userSelect: 'none',
     },
     '.cm-math-source': {
@@ -265,15 +365,28 @@ const mathTheme = EditorView.baseTheme({
 });
 
 /**
+ * Import the height cache to enable height caching for math widgets
+ */
+import { heightCache } from './heightCache';
+
+/**
  * Math extension for LaTeX rendering
+ * 
+ * Uses StateField-based decoration provider for correct scroll behavior.
+ * Heights are cached after first render for smooth subsequent scrolling.
  * 
  * @example
  * ```tsx
- * import { MarkdownEditor, mathExtension } from 'modern-markdown-editor';
+ * import { MarkdownEditor, mathExtension } from 'strata-editor';
  * 
  * <MarkdownEditor extensions={[mathExtension()]} />
  * ```
  */
 export function mathExtension(): Extension {
-    return [mathPlugin, mathTheme];
+    return [
+        heightCache,  // Include height cache (deduplicated if already present)
+        mathCache,    // StateField for math positions
+        mathDecorations, // Computed decorations
+        mathTheme,    // Styling
+    ];
 }

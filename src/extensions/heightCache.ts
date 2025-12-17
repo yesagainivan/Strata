@@ -92,6 +92,22 @@ export const clearHeightCacheEffect = StateEffect.define<{
     keys?: string[];
 }>();
 
+// ============================================================================
+// Debug Configuration
+// ============================================================================
+
+/**
+ * Enable debug logging for height cache updates.
+ * Set to true to see all height cache operations in the console.
+ */
+export const DEBUG_HEIGHT_CACHE = false;
+
+function debugLog(message: string, data?: unknown) {
+    if (DEBUG_HEIGHT_CACHE) {
+        console.log(`[HeightCache] ${message}`, data ?? '');
+    }
+}
+
 /**
  * StateField storing the height cache
  * 
@@ -100,6 +116,7 @@ export const clearHeightCacheEffect = StateEffect.define<{
  */
 export const heightCache = StateField.define<Map<string, HeightCacheEntry>>({
     create() {
+        debugLog('Cache created');
         return new Map();
     },
     update(cache, tr) {
@@ -107,6 +124,16 @@ export const heightCache = StateField.define<Map<string, HeightCacheEntry>>({
 
         for (const effect of tr.effects) {
             if (effect.is(heightCacheEffect)) {
+                const prevHeight = cache.get(effect.value.key)?.height;
+                const newHeight = effect.value.height;
+                const delta = prevHeight ? newHeight - prevHeight : newHeight;
+
+                debugLog(`Height update: ${effect.value.key}`, {
+                    prev: prevHeight ?? 'none',
+                    new: newHeight,
+                    delta: delta > 0 ? `+${delta}` : delta,
+                });
+
                 // Copy-on-write: only create new Map if we're modifying
                 if (newCache === cache) {
                     newCache = new Map(cache);
@@ -116,6 +143,7 @@ export const heightCache = StateField.define<Map<string, HeightCacheEntry>>({
                     timestamp: Date.now()
                 });
             } else if (effect.is(clearHeightCacheEffect)) {
+                debugLog('Cache clear', effect.value.keys ?? 'all');
                 if (effect.value.keys && effect.value.keys.length > 0) {
                     // Clear specific keys
                     if (newCache === cache) {

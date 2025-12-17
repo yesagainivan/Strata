@@ -416,19 +416,21 @@ const baseTheme = EditorView.baseTheme({
         textDecoration: 'line-through',
         opacity: '0.7',
     },
+    // NOTE: Using only horizontal padding to avoid changing line height (causes scroll jumps)
     '.cm-code': {
         fontFamily: '"SF Mono", Monaco, "Cascadia Code", monospace',
         backgroundColor: 'var(--syntax-code-bg)',
         color: 'var(--syntax-code)',
-        padding: '2px 4px',
+        padding: '0 4px',   // Was: '2px 4px' - vertical padding changes line height
         borderRadius: '3px',
     },
 
     // Highlights (==text==) - uses warning colors by default for consistency
+    // NOTE: Using only horizontal padding to avoid changing line height (causes scroll jumps)
     '.cm-highlight': {
         backgroundColor: 'var(--syntax-highlight-bg, var(--callout-warning-bg, #fef08a))',
         color: 'var(--syntax-highlight-text, var(--callout-header-warning, #854d0e))',
-        padding: '1px 2px',
+        padding: '0 2px',   // Was: '1px 2px' - vertical padding changes line height
         borderRadius: '2px',
     },
 

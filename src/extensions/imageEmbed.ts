@@ -1,17 +1,38 @@
 /**
  * Image Embed extension for ![[image.png]] syntax
+ * 
+ * ## Architecture
+ * 
+ * This extension uses a StateField-based approach for correct height estimation:
+ * 
+ * 1. `imageEmbedCache` StateField stores all image embed positions
+ * 2. `imageEmbedDecorations` uses EditorView.decorations.compute()
+ * 3. `ImageEmbedWidget` measures height after image load and updates the heightCache
+ * 
+ * This ensures CodeMirror's height map is accurate BEFORE viewport computation,
+ * eliminating scroll jumping when scrolling past images.
  */
 
-import { Extension, RangeSetBuilder } from '@codemirror/state';
+import { Extension, RangeSetBuilder, StateField } from '@codemirror/state';
 import {
     Decoration,
     DecorationSet,
     EditorView,
-    ViewPlugin,
-    ViewUpdate,
     WidgetType,
+    Rect,
 } from '@codemirror/view';
-import { collectCodeRanges, isInsideCode } from './utils';
+import { syntaxTree } from '@codemirror/language';
+import { heightCacheEffect, imageCacheKey, getCachedHeight, heightCache } from './heightCache';
+
+// ============================================================================
+// Debug Configuration
+// ============================================================================
+
+/**
+ * Temporarily disable image embeds for debugging.
+ * Set to true to test other extensions without image-related scroll issues.
+ */
+export const DISABLE_IMAGE_EMBEDS = false;
 
 /**
  * Regex to match image embeds: ![[target]] or ![[target|alt]]
@@ -19,7 +40,7 @@ import { collectCodeRanges, isInsideCode } from './utils';
 const IMAGE_EMBED_REGEX = /!\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]/g;
 
 /**
- * Parse an image embed match into its components
+ * Represents an image embed found in the document
  */
 interface ImageEmbedMatch {
     full: string;
@@ -29,44 +50,117 @@ interface ImageEmbedMatch {
     to: number;
 }
 
-function parseImageEmbeds(text: string, offset: number): ImageEmbedMatch[] {
-    const matches: ImageEmbedMatch[] = [];
-    let match;
+/**
+ * Check if a position is inside a code block or inline code
+ */
+function isInsideCodeNode(from: number, to: number, state: { tree: ReturnType<typeof syntaxTree> }): boolean {
+    let insideCode = false;
+    state.tree.iterate({
+        from,
+        to,
+        enter(node) {
+            const name = node.name;
+            if (
+                name === 'CodeBlock' ||
+                name === 'FencedCode' ||
+                name === 'InlineCode' ||
+                name === 'CodeText'
+            ) {
+                insideCode = true;
+                return false;
+            }
+        },
+    });
+    return insideCode;
+}
 
+/**
+ * Find all image embeds in the entire document
+ */
+function findAllImageEmbedsInDocument(
+    doc: { toString: () => string },
+    tree: ReturnType<typeof syntaxTree>
+): ImageEmbedMatch[] {
+    const text = doc.toString();
+    const matches: ImageEmbedMatch[] = [];
+
+    // Reset regex state
+    IMAGE_EMBED_REGEX.lastIndex = 0;
+
+    let match;
     while ((match = IMAGE_EMBED_REGEX.exec(text)) !== null) {
-        matches.push({
-            full: match[0],
-            target: match[1],
-            alt: match[2],
-            from: offset + match.index,
-            to: offset + match.index + match[0].length,
-        });
+        const from = match.index;
+        const to = match.index + match[0].length;
+
+        // Skip if inside code
+        if (!isInsideCodeNode(from, to, { tree })) {
+            matches.push({
+                full: match[0],
+                target: match[1],
+                alt: match[2],
+                from,
+                to,
+            });
+        }
     }
 
     return matches;
 }
 
 /**
+ * StateField to cache image embed positions
+ * Only re-parses when the document changes
+ */
+const imageEmbedCache = StateField.define<ImageEmbedMatch[]>({
+    create(state) {
+        const tree = syntaxTree(state);
+        return findAllImageEmbedsInDocument(state.doc, tree);
+    },
+    update(matches, tr) {
+        if (!tr.docChanged) {
+            return matches;
+        }
+        const tree = syntaxTree(tr.state);
+        return findAllImageEmbedsInDocument(tr.state.doc, tree);
+    },
+});
+
+/**
  * Widget for rendering embedded images
+ * Measures and caches height after image loads for smooth scrolling
  */
 class ImageEmbedWidget extends WidgetType {
-    constructor(private match: ImageEmbedMatch) {
+    private cacheKey: string;
+    private cachedHeight: number | null = null;
+
+    constructor(
+        private match: ImageEmbedMatch,
+        cachedHeight?: number
+    ) {
         super();
+        this.cacheKey = imageCacheKey(match.target);
+        this.cachedHeight = cachedHeight ?? null;
     }
 
     /**
      * Estimated height for CodeMirror viewport calculations.
-     * This helps prevent scroll "gaps" by giving CM6 a height estimate
-     * before the image is actually loaded and rendered.
      * 
-     * Uses 300px to match CSS max-height constraint. This is conservative
-     * (small images have excess estimate), but prevents jumps on large images.
+     * Priority:
+     * 1. Use cached height from previous load (most accurate)
+     * 2. Use 200px as reasonable middle-ground fallback
+     *    (Better than 300px which over-estimates small images)
      */
     get estimatedHeight(): number {
-        return 300;
+        if (this.cachedHeight !== null) {
+            return this.cachedHeight;
+        }
+        // 200px is a reasonable middle-ground:
+        // - Not too small (would cause jump for large images)
+        // - Not too large (would cause excess whitespace for small images)
+        return 200;
     }
 
-    toDOM(): HTMLElement {
+    toDOM(view: EditorView): HTMLElement {
         const container = document.createElement('span');
         container.className = 'cm-image-embed';
 
@@ -78,6 +172,23 @@ class ImageEmbedWidget extends WidgetType {
             img.alt = this.match.alt;
             img.title = this.match.alt;
         }
+
+        // Measure height after image loads
+        img.onload = () => {
+            // Calculate actual display height considering CSS max-height constraint
+            const displayHeight = Math.min(img.naturalHeight, 300);
+
+            if (displayHeight > 0 && displayHeight !== this.cachedHeight) {
+                view.dispatch({
+                    effects: heightCacheEffect.of({
+                        key: this.cacheKey,
+                        height: displayHeight,
+                    }),
+                });
+                // Tell CM6 to recalculate its internal height map
+                view.requestMeasure();
+            }
+        };
 
         // Enable native drag with the original markdown syntax
         img.addEventListener('dragstart', (e) => {
@@ -100,10 +211,27 @@ class ImageEmbedWidget extends WidgetType {
             errorText.textContent = `❌ Failed to load image: ${this.match.target}`;
             errorText.className = 'cm-image-error-text';
             container.appendChild(errorText);
+
+            // Cache error state as small height
+            view.dispatch({
+                effects: heightCacheEffect.of({
+                    key: this.cacheKey,
+                    height: 30, // Error text height
+                }),
+            });
+            // Tell CM6 to recalculate its internal height map
+            view.requestMeasure();
         };
 
         container.appendChild(img);
         return container;
+    }
+
+    /**
+     * Coordinate mapping for image widgets
+     */
+    coordsAt(dom: HTMLElement, pos: number, side: number): Rect | null {
+        return dom.getBoundingClientRect();
     }
 
     eq(other: ImageEmbedWidget): boolean {
@@ -115,7 +243,6 @@ class ImageEmbedWidget extends WidgetType {
 
     ignoreEvent(event: Event): boolean {
         // Allow drag events and mousedown to be handled by the image directly
-        // This prevents CodeMirror from intercepting and breaking native drag behavior
         const type = event.type;
         return type === 'mousedown' ||
             type === 'dragstart' ||
@@ -126,77 +253,62 @@ class ImageEmbedWidget extends WidgetType {
     }
 }
 
-
 /**
- * Build decorations for image embeds
+ * Computed decorations using StateField-cached positions
  */
-function buildImageEmbedDecorations(view: EditorView): DecorationSet {
-    const builder = new RangeSetBuilder<Decoration>();
-    const doc = view.state.doc;
-    const cursorLine = doc.lineAt(view.state.selection.main.head).number;
+const imageEmbedDecorations = EditorView.decorations.compute(
+    [imageEmbedCache, heightCache, 'selection'],  // heightCache added so we recompute with new cached heights
+    (state) => {
+        // Early return if images are disabled for debugging
+        if (DISABLE_IMAGE_EMBEDS) {
+            return Decoration.none;
+        }
 
-    // Pre-collect code ranges once (O(n) instead of O(n²))
-    const codeRanges = collectCodeRanges(view);
+        const doc = state.doc;
+        const cursorPos = state.selection.main.head;
+        const cursorLine = doc.lineAt(cursorPos).number;
 
-    for (const { from, to } of view.visibleRanges) {
-        const text = doc.sliceString(from, to);
-        const matches = parseImageEmbeds(text, from);
+        const matches = state.field(imageEmbedCache);
+
+        interface DecoEntry {
+            from: number;
+            to: number;
+            deco: Decoration;
+        }
+
+        const decos: DecoEntry[] = [];
 
         for (const match of matches) {
-            // Simple range check instead of tree iteration per match
-            if (isInsideCode(match.from, match.to, codeRanges)) continue;
-
             const matchLine = doc.lineAt(match.from).number;
             const isActiveLine = matchLine === cursorLine;
 
-            if (isActiveLine) {
-                // On active line, show the raw syntax
-                // We don't add any decorations here to let the raw text show
-            } else {
-                // On other lines, replace with the image widget
-                builder.add(
-                    match.from,
-                    match.to,
-                    Decoration.replace({
-                        widget: new ImageEmbedWidget(match),
-                    })
-                );
+            if (!isActiveLine) {
+                // Get cached height for this image
+                const cacheKey = imageCacheKey(match.target);
+                const cachedHeight = getCachedHeight(state, cacheKey, -1);
+
+                decos.push({
+                    from: match.from,
+                    to: match.to,
+                    deco: Decoration.replace({
+                        widget: new ImageEmbedWidget(
+                            match,
+                            cachedHeight > 0 ? cachedHeight : undefined
+                        ),
+                    }),
+                });
             }
-        }
-    }
-
-    return builder.finish();
-}
-
-/**
- * View plugin for image embed decorations
- */
-const imageEmbedPlugin = ViewPlugin.fromClass(
-    class {
-        decorations: DecorationSet;
-        lastCursorLine: number;
-
-        constructor(view: EditorView) {
-            this.decorations = buildImageEmbedDecorations(view);
-            this.lastCursorLine = view.state.doc.lineAt(view.state.selection.main.head).number;
+            // On active line, show raw syntax (no decoration needed)
         }
 
-        update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged) {
-                this.decorations = buildImageEmbedDecorations(update.view);
-                this.lastCursorLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
-            } else if (update.selectionSet) {
-                // Only rebuild if cursor moved to a different line
-                const newLine = update.view.state.doc.lineAt(update.view.state.selection.main.head).number;
-                if (newLine !== this.lastCursorLine) {
-                    this.decorations = buildImageEmbedDecorations(update.view);
-                    this.lastCursorLine = newLine;
-                }
-            }
+        // Sort by position
+        decos.sort((a, b) => a.from - b.from || a.to - b.to);
+
+        const builder = new RangeSetBuilder<Decoration>();
+        for (const { from, to, deco } of decos) {
+            builder.add(from, to, deco);
         }
-    },
-    {
-        decorations: (v) => v.decorations,
+        return builder.finish();
     }
 );
 
@@ -211,7 +323,7 @@ const imageEmbedTheme = EditorView.baseTheme({
     },
     '.cm-image-embed img': {
         maxWidth: '100%',
-        maxHeight: '300px', // Limit height to avoid taking up too much space
+        maxHeight: '300px',
         borderRadius: '4px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         cursor: 'grab',
@@ -233,7 +345,15 @@ const imageEmbedTheme = EditorView.baseTheme({
 
 /**
  * Image embed extension
+ * 
+ * Uses StateField-based decoration provider for correct scroll behavior.
+ * Heights are cached after image load for smooth subsequent scrolling.
  */
 export function imageEmbedExtension(): Extension {
-    return [imageEmbedPlugin, imageEmbedTheme];
+    return [
+        heightCache,      // Include height cache (deduplicated if already present)
+        imageEmbedCache,  // StateField for image positions
+        imageEmbedDecorations, // Computed decorations
+        imageEmbedTheme,  // Styling
+    ];
 }
