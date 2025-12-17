@@ -52,6 +52,35 @@ const mentions = createExtension({
 });
 ```
 
+## Block Widget with Scroll Optimization
+
+For large widgets like embeds or previews, use block and scroll optimization options:
+
+```tsx
+const embedExtension = createExtension({
+  name: 'embed',
+  pattern: /::embed\[([^\]]+)\]/g,
+  hideOnInactive: true,
+  isBlock: true,
+  estimatedHeight: 200,
+  lineClass: 'cm-embed-line',
+  
+  // Height caching - persists across scrolls
+  cacheKey: (match) => `embed:${match[1]}`,
+  
+  // Lifecycle hooks
+  onMount: (el) => console.log('Embed mounted'),
+  onDestroy: (el) => console.log('Embed destroyed'),
+  
+  widget: (match) => {
+    const iframe = document.createElement('iframe');
+    iframe.src = match[1];
+    iframe.style.cssText = 'width: 100%; height: 200px; border: none;';
+    return iframe;
+  },
+});
+```
+
 ## Configuration Options
 
 | Option | Type | Description |
@@ -62,6 +91,13 @@ const mentions = createExtension({
 | `onClick` | `function` | Click handler `(match, event) => void` |
 | `hideOnInactive` | `boolean` | Hide raw syntax when not editing |
 | `widget` | `function` | Custom element factory |
+| `estimatedHeight` | `number` | Height estimate in px (default: 20) |
+| `isBlock` | `boolean` | Block-level decoration (default: false) |
+| `lineClass` | `string` | CSS class for the entire line |
+| `onMount` | `function` | Lifecycle: widget created |
+| `onDestroy` | `function` | Lifecycle: widget removed |
+| `cacheKey` | `function` | Height cache key generator |
+| `coordsAt` | `function` | Custom scroll coordinate mapping |
 
 ## Styling Extensions
 

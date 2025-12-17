@@ -23,10 +23,6 @@ Lines that wrap to multiple visual lines may cause minor scroll shifts when scro
 - [ ] Image caching to prevent reload flicker
 - [ ] Dynamic `estimatedHeight` scaling based on CSS font-size
 
-### User Extension API
-- [ ] `coordsAt` option for custom widgets
-- [ ] `cacheKey` option for automatic height caching
-
 ---
 
 ## Completed (v2.1.0) - Scroll Stability Overhaul
@@ -51,6 +47,11 @@ Lines that wrap to multiple visual lines may cause minor scroll shifts when scro
 - [x] `math.ts`: ViewPlugin → StateField + `EditorView.decorations.compute()`
 - [x] `imageEmbed.ts`: ViewPlugin → StateField + `EditorView.decorations.compute()`
 - [x] All block widgets now implement `coordsAt()`
+
+### User Extension API
+- [x] `cacheKey` option for automatic height caching
+- [x] `coordsAt` option for scroll coordinate mapping
+- [x] Height cache integration in `createExtension()`
 
 ---
 

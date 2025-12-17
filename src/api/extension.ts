@@ -13,6 +13,7 @@ import {
     WidgetType,
 } from '@codemirror/view';
 import { collectCodeRanges, isInsideCode } from '../extensions/utils';
+import { heightCacheEffect, getCachedHeight, heightCache } from '../extensions/heightCache';
 
 /**
  * Configuration for a custom markdown extension
@@ -64,6 +65,39 @@ export interface CustomExtensionConfig {
      * Use for cleanup (remove listeners, cancel requests, etc.)
      */
     onDestroy?: (element: HTMLElement) => void;
+
+    // === SCROLL OPTIMIZATION OPTIONS (v2.1.0) ===
+
+    /**
+     * Function to generate a unique cache key for height caching.
+     * If provided, widget heights will be cached and persisted across scrolls.
+     * 
+     * @example
+     * ```ts
+     * cacheKey: (match) => `embed:${match[1]}`, // Cache by embed URL
+     * ```
+     */
+    cacheKey?: (match: RegExpMatchArray) => string;
+
+    /**
+     * Custom coordinate mapping for block widgets.
+     * Helps CM6 calculate accurate scroll positions within large widgets.
+     * Only used when `isBlock` is true.
+     * 
+     * @param element - The widget's DOM element
+     * @param pos - Position within the widget (0 = top)
+     * @param side - -1 for before position, 1 for after
+     * @returns Rect with coordinates, or null to use default
+     * 
+     * @example
+     * ```ts
+     * coordsAt: (element, pos, side) => {
+     *   const rect = element.getBoundingClientRect();
+     *   return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
+     * },
+     * ```
+     */
+    coordsAt?: (element: HTMLElement, pos: number, side: -1 | 1) => { top: number; bottom: number; left: number; right: number } | null;
 }
 
 /**
@@ -76,10 +110,12 @@ class CustomWidget extends WidgetType {
         private element: HTMLElement,
         private id: string,
         private estimatedHeightValue: number,
-        private isBlock: boolean,
+        private isBlockWidget: boolean,
         private match: RegExpMatchArray,
+        private cacheKeyValue: string | null,
         private onMount?: (el: HTMLElement, match: RegExpMatchArray) => void,
-        private onDestroyCallback?: (el: HTMLElement) => void
+        private onDestroyCallback?: (el: HTMLElement) => void,
+        private coordsAtCallback?: (element: HTMLElement, pos: number, side: -1 | 1) => { top: number; bottom: number; left: number; right: number } | null
     ) {
         super();
     }
@@ -91,7 +127,7 @@ class CustomWidget extends WidgetType {
         return this.estimatedHeightValue;
     }
 
-    toDOM(): HTMLElement {
+    toDOM(view: EditorView): HTMLElement {
         const el = this.element.cloneNode(true) as HTMLElement;
         this.mountedElement = el;
 
@@ -100,7 +136,38 @@ class CustomWidget extends WidgetType {
             this.onMount(el, this.match);
         }
 
+        // Measure and cache height for block widgets with cacheKey
+        if (this.isBlockWidget && this.cacheKeyValue) {
+            requestAnimationFrame(() => {
+                const height = el.getBoundingClientRect().height;
+                if (height > 0) {
+                    view.dispatch({
+                        effects: heightCacheEffect.of({
+                            key: this.cacheKeyValue!,
+                            height,
+                        }),
+                    });
+                    view.requestMeasure();
+                }
+            });
+        }
+
         return el;
+    }
+
+    /**
+     * Coordinate mapping for block widgets
+     */
+    coordsAt(dom: HTMLElement, pos: number, side: -1 | 1): { top: number; bottom: number; left: number; right: number } | null {
+        if (this.coordsAtCallback && this.mountedElement) {
+            return this.coordsAtCallback(this.mountedElement, pos, side);
+        }
+        // Default: return bounding rect of the widget
+        if (this.mountedElement) {
+            const rect = this.mountedElement.getBoundingClientRect();
+            return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
+        }
+        return null;
     }
 
     destroy(): void {
@@ -181,14 +248,25 @@ function buildCustomDecorations(
                 const element = config.widget(match, matchFrom, matchTo);
                 element.className = `${element.className || ''} ${config.className || ''}`.trim();
 
+                // Generate cache key if provided
+                const cacheKeyValue = config.cacheKey ? config.cacheKey(match) : null;
+
+                // Get cached height if available
+                const cachedHeight = cacheKeyValue
+                    ? getCachedHeight(view.state, cacheKeyValue, -1)
+                    : -1;
+                const heightEstimate = cachedHeight > 0 ? cachedHeight : (config.estimatedHeight ?? 20);
+
                 const widget = new CustomWidget(
                     element,
                     `${config.name}-${matchFrom}`,
-                    config.estimatedHeight ?? 20,
+                    heightEstimate,
                     config.isBlock ?? false,
                     match,
+                    cacheKeyValue,
                     config.onMount,
-                    config.onDestroy
+                    config.onDestroy,
+                    config.coordsAt
                 );
 
                 decos.push({
