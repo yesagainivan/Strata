@@ -3,7 +3,11 @@
 ## Known Limitations
 
 ### Font Size Scaling
-Widget `estimatedHeight` values are calibrated for default font sizes (~16px). Extreme font size changes via theming may affect scroll smoothness.
+Widget `estimatedHeight` values are calibrated for the default typography:
+- **Font size**: `16px` (`--editor-font-size`)
+- **Line height**: `1.6` (`--editor-line-height`)
+
+Extreme deviations (e.g., 24px+ font) may cause minor scroll smoothness issues.
 
 **Potential fix**: Dynamic height calculation based on computed font size.
 

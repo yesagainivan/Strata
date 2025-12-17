@@ -132,6 +132,14 @@ class CalloutIconWidget extends WidgetType {
         super();
     }
 
+    /**
+     * Estimated height for consistent scroll behavior.
+     * Inline widget constrained to line height.
+     */
+    get estimatedHeight(): number {
+        return 20;
+    }
+
     toDOM(): HTMLElement {
         const span = document.createElement('span');
         span.className = `cm-callout-header-widget cm-callout-header-${this.styleType}`;
@@ -386,13 +394,13 @@ const calloutPlugin = ViewPlugin.fromClass(
 
 const calloutTheme = EditorView.baseTheme({
     '.cm-callout-line': {
-        backgroundColor: 'var(--callout-info-bg)',
-        borderLeft: '4px solid var(--callout-info-border)',
+        // Base styling only - colors come from type-specific classes
+        borderLeft: '4px solid transparent',
         paddingLeft: '12px',
     },
     // Hidden content lines when folded
     '.cm-callout-hidden-line': {
-        display: 'none !important',
+        display: 'none',
     },
     // Fold toggle button
     '.cm-callout-fold-toggle': {
@@ -448,47 +456,47 @@ const calloutTheme = EditorView.baseTheme({
     '.cm-callout-header-quote': { color: 'var(--callout-header-quote, #475569)' },
     '.cm-callout-header-example': { color: 'var(--callout-header-example, #0369a1)' },
     '.cm-callout-header-bug': { color: 'var(--callout-header-bug, #991b1b)' },
-    // Type colors
+    // Type colors - no !important needed since base has transparent border
     '.cm-callout-info': {
-        backgroundColor: 'var(--callout-info-bg) !important',
-        borderLeftColor: 'var(--callout-info-border) !important',
+        backgroundColor: 'var(--callout-info-bg)',
+        borderLeftColor: 'var(--callout-info-border)',
     },
     '.cm-callout-warning': {
-        backgroundColor: 'var(--callout-warning-bg) !important',
-        borderLeftColor: 'var(--callout-warning-border) !important',
+        backgroundColor: 'var(--callout-warning-bg)',
+        borderLeftColor: 'var(--callout-warning-border)',
     },
     '.cm-callout-danger': {
-        backgroundColor: 'var(--callout-danger-bg) !important',
-        borderLeftColor: 'var(--callout-danger-border) !important',
+        backgroundColor: 'var(--callout-danger-bg)',
+        borderLeftColor: 'var(--callout-danger-border)',
     },
     '.cm-callout-success': {
-        backgroundColor: 'var(--callout-success-bg) !important',
-        borderLeftColor: 'var(--callout-success-border) !important',
+        backgroundColor: 'var(--callout-success-bg)',
+        borderLeftColor: 'var(--callout-success-border)',
     },
     '.cm-callout-tip': {
-        backgroundColor: 'var(--callout-tip-bg) !important',
-        borderLeftColor: 'var(--callout-tip-border) !important',
+        backgroundColor: 'var(--callout-tip-bg)',
+        borderLeftColor: 'var(--callout-tip-border)',
     },
     '.cm-callout-note': {
-        backgroundColor: 'var(--callout-note-bg) !important',
-        borderLeftColor: 'var(--callout-note-border) !important',
+        backgroundColor: 'var(--callout-note-bg)',
+        borderLeftColor: 'var(--callout-note-border)',
     },
     '.cm-callout-question': {
-        backgroundColor: 'var(--callout-question-bg) !important',
-        borderLeftColor: 'var(--callout-question-border) !important',
+        backgroundColor: 'var(--callout-question-bg)',
+        borderLeftColor: 'var(--callout-question-border)',
     },
     '.cm-callout-quote': {
-        backgroundColor: 'var(--callout-quote-bg) !important',
-        borderLeftColor: 'var(--callout-quote-border) !important',
+        backgroundColor: 'var(--callout-quote-bg)',
+        borderLeftColor: 'var(--callout-quote-border)',
         fontStyle: 'italic',
     },
     '.cm-callout-example': {
-        backgroundColor: 'var(--callout-example-bg) !important',
-        borderLeftColor: 'var(--callout-example-border) !important',
+        backgroundColor: 'var(--callout-example-bg)',
+        borderLeftColor: 'var(--callout-example-border)',
     },
     '.cm-callout-bug': {
-        backgroundColor: 'var(--callout-bug-bg) !important',
-        borderLeftColor: 'var(--callout-bug-border) !important',
+        backgroundColor: 'var(--callout-bug-bg)',
+        borderLeftColor: 'var(--callout-bug-border)',
     },
 });
 

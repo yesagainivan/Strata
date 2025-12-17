@@ -267,12 +267,21 @@ class TableWidget extends WidgetType {
     /**
      * Estimated height for CodeMirror viewport calculations
      * This helps prevent scroll "gaps" by giving CM6 a height estimate
-     * before the widget is actually rendered
+     * before the widget is actually rendered.
+     * 
+     * CSS analysis:
+     * - Cell padding: 8px top + 8px bottom = 16px
+     * - Font size: 0.9em (~14px) with default line-height
+     * - Border: 1px per row
+     * - Container margin: 4px top + 4px bottom = 8px
+     * 
+     * Each row is roughly 16px (padding) + 16px (content) + 1px (border) ≈ 33px
+     * Using 34px as a conservative estimate per row
      */
     get estimatedHeight(): number {
-        // Header (1) + separator (1) + body rows, ~32px per row + 16px padding
-        const rowCount = 2 + this.table.bodyRows.length;
-        return rowCount * 32 + 16;
+        // Header row + body rows, each ~34px, plus 8px container margin
+        const rowCount = 1 + this.table.bodyRows.length;
+        return rowCount * 34 + 8;
     }
 
     toDOM(): HTMLElement {
@@ -404,11 +413,11 @@ const tableDecorations = EditorView.decorations.compute(
 const tableTheme = EditorView.baseTheme({
     // Completely hide the raw text lines
     '.cm-table-hidden-line': {
-        fontSize: '0 !important',
-        lineHeight: '0 !important',
-        height: '0 !important',
-        overflow: 'hidden !important',
-        visibility: 'hidden !important',
+        fontSize: '0',
+        lineHeight: '0',
+        height: '0',
+        overflow: 'hidden',
+        visibility: 'hidden',
     },
     '.cm-table-widget': {
         display: 'block',
