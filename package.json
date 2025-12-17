@@ -1,6 +1,6 @@
 {
   "name": "strata-editor",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "A production-ready CodeMirror 6 markdown editor with Obsidian-style WYSIWYG editing",
   "type": "module",
   "license": "MIT",
