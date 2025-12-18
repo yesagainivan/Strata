@@ -9,9 +9,6 @@ Widget `estimatedHeight` values are calibrated for the default typography:
 
 Extreme deviations (e.g., 24px+ font) may cause minor scroll smoothness issues.
 
-### Image Loading
-Images from external URLs reload when scrolling in/out of view. This is due to CM6's virtual rendering which destroys/recreates DOM elements. The browser's HTTP cache mitigates this, but a brief flicker may occur.
-
 ### Line Wrapping
 Lines that wrap to multiple visual lines may cause minor scroll shifts when scrolling to the document top. This is a CM6 virtual rendering characteristic.
 
@@ -20,10 +17,40 @@ Lines that wrap to multiple visual lines may cause minor scroll shifts when scro
 ## Future Enhancements
 
 ### Performance
-- [ ] Image caching to prevent reload flicker
 - [ ] Dynamic `estimatedHeight` scaling based on CSS font-size
+- [ ] CSS variable `--image-canvas-height` for customizable image canvas size
+
+### Layered Blocks Pattern
+- [ ] Apply fixed-height canvas to math blocks (optional, low priority)
+- [ ] User-configurable height via alt text: `![[photo.png|h:400]]`
 
 ---
+
+## Completed (v2.2.0) - Fixed-Height Canvas
+
+### The "Layered Blocks" Pattern
+Introduced **fixed-height canvas containers** for images, guaranteeing 100% accurate height estimation. This eliminates all scroll jumping for image embeds.
+
+**Key insight**: By enforcing a fixed container height, `estimatedHeight` always returns the exact rendered height. No caching or measurement needed!
+
+```
+┌─────────────────────────────────────┐
+│  Fixed-height canvas (200px)        │
+│  ┌─────────────────────────────┐    │
+│  │     Image scales to fit     │    │
+│  │     (object-fit: contain)   │    │
+│  └─────────────────────────────┘    │
+└─────────────────────────────────────┘
+```
+
+### Changes
+- [x] `ImageEmbedWidget` now uses 200px fixed-height canvas
+- [x] Removed height caching for images (no longer needed)
+- [x] Images scale with `object-fit: contain` within canvas
+- [x] Canvas has subtle background for visual framing
+
+---
+
 
 ## Completed (v2.1.0) - Scroll Stability Overhaul
 

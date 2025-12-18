@@ -191,11 +191,11 @@ Strata supports custom pattern extensions. Try mentioning @users in your content
 
 This YouTube embed uses `createBlockExtension` with true CM6 block support:
 
-::embed[https://youtu.be/PqVbypvxDto]
+`::embed[https://youtu.be/PqVbypvxDto]`
 
 Or this GitHub embed:
 
-::embed[https://github.com/yesagainivan/Strata]
+`::embed[https://github.com/yesagainivan/Strata]`
 
 ```typescript
 const mentionExtension = createExtension({
